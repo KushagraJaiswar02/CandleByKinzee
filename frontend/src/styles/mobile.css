@@ -853,15 +853,39 @@
     position: sticky;
     top: 76px;
     z-index: 40;
-    background: var(--cream);
+    background: rgba(255, 248, 239, 0.96);
     border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .shop-filter-bar-inner {
     display: flex;
     flex-direction: column;
-    padding: 12px 20px;
-    gap: 12px;
+    padding: 10px 20px 8px;
+    gap: 8px;
+  }
+
+  .shop-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .shop-filter-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0.65;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .shop-categories-track-wrapper {
+    flex: 1;
+    min-width: 0;
   }
 
   .shop-categories-track-wrapper {
@@ -873,6 +897,59 @@
 
   .shop-categories-track-wrapper::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Occasion row — mobile */
+  .shop-occasion-bar {
+    padding: 4px 20px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .shop-filter-label--occasion {
+    flex-shrink: 0;
+  }
+
+  .shop-occasion-track {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .shop-occasion-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .shop-occasion-pill {
+    padding: 5px 12px;
+    font-size: 0.78rem;
+  }
+
+  .shop-occasion-pill-emoji {
+    font-size: 0.88rem;
+  }
+
+  /* Active filter summary — mobile */
+  .shop-active-filters-inner {
+    padding: 6px 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .shop-active-filters-summary {
+    font-size: 0.76rem;
+  }
+
+  .shop-filter-clear-btn {
+    font-size: 0.74rem;
+  }
+
+  .shop-no-results-clear {
+    font-size: 0.82rem;
+    padding: 8px 18px;
   }
 
   .shop-categories-track {
