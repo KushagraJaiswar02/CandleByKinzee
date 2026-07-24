@@ -184,12 +184,7 @@ nav a:focus-visible::after,
   padding: clamp(70px, 9vw, 120px)
            clamp(30px, 8vw, 110px);
 
-  background: linear-gradient(
-    180deg,
-    #fffaf5 0%,
-    #f8f2ea 45%,
-    #f4ece2 100%
-  );
+  background: var(--cream);
 }
 
 /* Faint handmade paper/fine grain texture overlay */
