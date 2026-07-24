@@ -11,6 +11,18 @@ import { ORDER_EVENTS, orderCreatedPayload, paymentVerifiedPayload, statusChange
 
 const makeOrderNumber = customAlphabet('23456789ABCDEFGHJKLMNPQRSTUVWXYZ', 10);
 
+const STATUS_WEIGHTS = {
+  pending_payment: 0,
+  payment_received: 1,
+  order_confirmed: 2,
+  handcrafting: 3,
+  packaging: 4,
+  ready_for_dispatch: 5,
+  dispatched: 6,
+  delivered: 7,
+  cancelled: 99
+};
+
 export async function createCatalogOrder({ items, customer, deliveryMethod, discountCode }) {
   const pricing = await computeCatalogTotal(items, discountCode);
   const order = await Order.create({
@@ -125,6 +137,14 @@ export async function updateOrderStatus(orderId, newStatus, note = '') {
 
   const previousStatus = order.status;
   if (previousStatus === newStatus) return order;
+  
+  if (previousStatus === 'cancelled') {
+    throw new AppError('Cannot change the status of a cancelled order.', 400);
+  }
+  
+  if (STATUS_WEIGHTS[newStatus] < STATUS_WEIGHTS[previousStatus]) {
+    throw new AppError(`Invalid transition: Cannot move order backwards from ${previousStatus} to ${newStatus}.`, 400);
+  }
 
   order.status = newStatus;
   
