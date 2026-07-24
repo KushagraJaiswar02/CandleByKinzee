@@ -6,7 +6,8 @@ import { AppError } from '../utils/errors.js';
 import { computeCatalogTotal, splitAdvance } from './pricingService.js';
 import { createAdvancePaymentOrder, createBalancePaymentLink, refundAdvancePayment, verifyRazorpaySignature } from './paymentService.js';
 import { env } from '../config/env.js';
-import { sendOrderEmail } from './notificationService.js';
+import { eventBus } from '../events/eventBus.js';
+import { ORDER_EVENTS, orderCreatedPayload, paymentVerifiedPayload, statusChangedPayload, orderCancelledPayload } from '../events/orderEvents.js';
 
 const makeOrderNumber = customAlphabet('23456789ABCDEFGHJKLMNPQRSTUVWXYZ', 10);
 
@@ -21,9 +22,12 @@ export async function createCatalogOrder({ items, customer, deliveryMethod, disc
     paymentPlan: splitAdvance(pricing.total)
   });
   const razorpayOrder = await createAdvancePaymentOrder(order);
+  if (!order.razorpay) order.razorpay = {};
   order.razorpay.advanceOrderId = razorpayOrder.id;
   await order.save();
-  sendOrderEmail(order).catch(() => {});
+  
+  eventBus.publish(ORDER_EVENTS.ORDER_CREATED, orderCreatedPayload(order));
+  
   return { order, razorpayOrder };
 }
 
@@ -43,9 +47,12 @@ export async function acceptQuoteAndCreateOrder({ quoteId, customer, deliveryMet
   quote.status = 'accepted';
   await quote.save();
   const razorpayOrder = await createAdvancePaymentOrder(order);
+  if (!order.razorpay) order.razorpay = {};
   order.razorpay.advanceOrderId = razorpayOrder.id;
   await order.save();
-  sendOrderEmail(order).catch(() => {});
+  
+  eventBus.publish(ORDER_EVENTS.ORDER_CREATED, orderCreatedPayload(order));
+  
   return { order, razorpayOrder };
 }
 
@@ -56,9 +63,12 @@ export async function confirmAdvancePayment({ orderNumber, razorpay_order_id, ra
     throw new AppError('Invalid payment signature', 400);
   }
   order.paymentPlan.advanceStatus = 'paid';
-  order.status = order.status === 'placed' ? 'confirmed' : order.status;
+  order.status = order.status === 'pending_payment' ? 'payment_received' : order.status;
   order.razorpay.advancePaymentId = razorpay_payment_id;
   await order.save();
+  
+  eventBus.publish(ORDER_EVENTS.PAYMENT_VERIFIED, paymentVerifiedPayload(order));
+  
   return order;
 }
 
@@ -88,6 +98,9 @@ export async function cancelOrder(orderNumber, phone, reason) {
     refundStatus: refund ? 'initiated' : 'not_required'
   };
   await order.save();
+
+  eventBus.publish(ORDER_EVENTS.ORDER_CANCELLED, orderCancelledPayload(order));
+
   return order;
 }
 
@@ -104,4 +117,31 @@ export async function maybeCreateBalanceLink(order) {
     return link;
   }
   return null;
+}
+
+export async function updateOrderStatus(orderId, newStatus, note = '') {
+  const order = await Order.findById(orderId);
+  if (!order) throw new AppError('Order not found', 404);
+
+  const previousStatus = order.status;
+  if (previousStatus === newStatus) return order;
+
+  order.status = newStatus;
+  
+  // The pre-save hook on the Order model handles pushing to statusHistory.
+  // But we want to inject the note into the latest history entry before saving.
+  if (note) {
+      // By mutating the array element that will be added, we ensure the note is saved.
+      // A cleaner way is to push it directly since we know the status changed.
+      order.statusHistory.push({ status: newStatus, note, timestamp: new Date() });
+      // To prevent the pre-save hook from adding a duplicate, we must clear the modified flag if possible,
+      // but mongoose is smart enough to handle this if we push manually and then save. Actually the pre-save hook checks 
+      // if the last history entry is the same status. So it won't duplicate.
+  }
+
+  await order.save();
+
+  eventBus.publish(ORDER_EVENTS.ORDER_STATUS_CHANGED, statusChangedPayload(order, previousStatus));
+
+  return order;
 }

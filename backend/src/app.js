@@ -12,6 +12,7 @@ import { authRouter } from './routes/auth.js';
 import { adminContentRouter } from './routes/adminContent.js';
 import { paymentsRouter } from './routes/payments.js';
 import { customerAuthRouter } from './routes/customerAuth.js';
+import { initSubscribers } from './subscribers/index.js';
 
 export function createApp() {
   const app = express();
@@ -22,6 +23,9 @@ export function createApp() {
   app.use(cookieParser());
   app.use(mongoSanitize());
   if (env.nodeEnv !== 'test') app.use(morgan('dev'));
+
+  // Initialize event subscribers
+  initSubscribers();
 
   app.get('/health', (_req, res) => res.json({ ok: true }));
   app.use('/api/products', productsRouter);

@@ -17,5 +17,8 @@ export const env = {
   brevoSenderEmail: process.env.BREVO_SENDER_EMAIL || 'orders@example.com',
   brevoSenderName: process.env.BREVO_SENDER_NAME || 'Candle by Kinzee',
   whatsappNumber: process.env.WHATSAPP_NUMBER || '',
+  adminWhatsappNumber: process.env.ADMIN_WHATSAPP_NUMBER || process.env.WHATSAPP_NUMBER || '',
+  whatsappCloudPhoneNumberId: process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID || '',
+  whatsappCloudAccessToken: process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '',
   isProduction: process.env.NODE_ENV === 'production'
 };

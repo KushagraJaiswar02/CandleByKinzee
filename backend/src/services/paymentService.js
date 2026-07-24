@@ -16,6 +16,9 @@ function getClient() {
 }
 
 export function verifyRazorpaySignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) {
+  if (razorpay_order_id?.startsWith('dev_') && !env.razorpayKeySecret) {
+    return true; // Bypass in dev mode without keys
+  }
   const payload = `${razorpay_order_id}|${razorpay_payment_id}`;
   const expected = crypto
     .createHmac('sha256', env.razorpayKeySecret || 'dev_secret')

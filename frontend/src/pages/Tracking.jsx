@@ -63,71 +63,64 @@ export function Tracking() {
 
   // Helper to resolve custom/catalog milestones
   function getMilestones(ord) {
-    const isCustom = ord.source === 'quote';
     const status = ord.status;
-    const isPaid = ord.paymentPlan?.advanceStatus === 'paid';
-
-    if (isCustom) {
-      return [
-        { label: 'Request Received', check: true, current: false },
-        { label: 'Design Discussion', check: true, current: false },
-        { label: 'Quote Approved', check: true, current: false },
-        { label: 'Production Started', check: status !== 'placed' || isPaid, current: status === 'placed' && !isPaid },
-        { label: 'Handcrafting', check: ['in_progress', 'ready', 'shipped', 'out_for_delivery', 'delivered'].includes(status), current: status === 'confirmed' },
-        { label: 'Quality Check', check: ['ready', 'shipped', 'out_for_delivery', 'delivered'].includes(status), current: status === 'in_progress' },
-        { label: 'Packaging', check: ['shipped', 'out_for_delivery', 'delivered'].includes(status), current: status === 'ready' },
-        { label: 'Ready', check: ['shipped', 'out_for_delivery', 'delivered'].includes(status), current: status === 'shipped' },
-        { label: 'Delivered', check: status === 'delivered', current: status === 'out_for_delivery' }
-      ];
-    } else {
-      return [
-        { label: 'Order Received', check: true, current: false },
-        { label: 'Payment Confirmed', check: status !== 'placed' || isPaid, current: status === 'placed' && !isPaid },
-        { label: 'Handcrafting', check: ['in_progress', 'ready', 'shipped', 'out_for_delivery', 'delivered'].includes(status), current: status === 'confirmed' },
-        { label: 'Decoration', check: ['ready', 'shipped', 'out_for_delivery', 'delivered'].includes(status), current: status === 'in_progress' },
-        { label: 'Packaging', check: ['shipped', 'out_for_delivery', 'delivered'].includes(status), current: status === 'ready' },
-        { label: 'Ready for Shipping', check: ['shipped', 'out_for_delivery', 'delivered'].includes(status), current: status === 'shipped' },
-        { label: 'Delivered', check: status === 'delivered', current: status === 'out_for_delivery' }
-      ];
-    }
+    
+    const getTimestamp = (targetStatus) => {
+      // Find the first occurrence of the status in history
+      const entry = ord.statusHistory?.find(h => h.status === targetStatus);
+      return entry ? new Date(entry.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : null;
+    };
+    
+    return [
+      { label: 'Order Received', check: true, current: false, date: getTimestamp('pending_payment') || new Date(ord.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) },
+      { label: 'Payment Confirmed', check: ['payment_received', 'order_confirmed', 'handcrafting', 'packaging', 'ready_for_dispatch', 'dispatched', 'delivered'].includes(status), current: status === 'pending_payment', date: getTimestamp('payment_received') },
+      { label: 'Order Confirmed', check: ['order_confirmed', 'handcrafting', 'packaging', 'ready_for_dispatch', 'dispatched', 'delivered'].includes(status), current: status === 'payment_received', date: getTimestamp('order_confirmed') },
+      { label: 'Handcrafting', check: ['packaging', 'ready_for_dispatch', 'dispatched', 'delivered'].includes(status), current: ['order_confirmed', 'handcrafting'].includes(status), date: getTimestamp('handcrafting') },
+      { label: 'Packaging', check: ['ready_for_dispatch', 'dispatched', 'delivered'].includes(status), current: status === 'packaging', date: getTimestamp('packaging') },
+      { label: 'Ready for Dispatch', check: ['dispatched', 'delivered'].includes(status), current: status === 'ready_for_dispatch', date: getTimestamp('ready_for_dispatch') },
+      { label: 'Dispatched', check: status === 'delivered', current: status === 'dispatched', date: getTimestamp('dispatched') },
+      { label: 'Delivered', check: status === 'delivered', current: false, date: getTimestamp('delivered') }
+    ];
   }
 
   // Resolve current status updates and descriptions
   function getStudioUpdate(ord) {
     const status = ord.status;
-    const isCustom = ord.source === 'quote';
-
+    
     const updates = {
-      placed: {
-        text: 'Our artisans are preparing raw soy wax blocks and selecting cotton wicks for your pour.',
-        next: 'Pouring schedule starts tomorrow.',
+      pending_payment: {
+        text: 'Awaiting your advance payment confirmation to begin processing.',
+        next: 'We will confirm your order upon payment receipt.',
         img: null
       },
-      confirmed: {
-        text: 'Your order has been verified. We have allocated specialized containers and began handcrafting.',
-        next: 'Fragrance curation starts tomorrow.',
+      payment_received: {
+        text: 'Your payment has been received successfully.',
+        next: 'Our team will review and confirm your order shortly.',
+        img: null
+      },
+      order_confirmed: {
+        text: 'Your order has been verified. We have allocated specialized containers and will begin handcrafting.',
+        next: 'Handcrafting schedule starts tomorrow.',
         img: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=900&q=80'
       },
-      in_progress: {
-        text: isCustom 
-          ? 'Artisans are currently handcrafting the bespoke molds, layering florals, and hand-pouring wax.'
-          : 'Fragrance blocks are being poured in small batches. Soy waxes are curing in their glass containers.',
-        next: 'Wax decoration begins tomorrow.',
+      handcrafting: {
+        text: 'Fragrance blocks are being poured in small batches. Soy waxes are curing in their glass containers.',
+        next: 'Packaging and wax-sealed ribbons will be wrapped next.',
         img: 'https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=900&q=80'
       },
-      ready: {
-        text: 'Hand-pouring is complete. Your creations are drying, curing, and passing visual quality audits.',
-        next: 'Packaging and wax-sealed ribbons will be wrapped next.',
+      packaging: {
+        text: 'Hand-pouring is complete. Artisans are wrapping your candles in custom kraft boxes.',
+        next: 'Ready for dispatch soon.',
         img: 'https://images.unsplash.com/photo-1508747703725-719ae25d3d4b?auto=format&fit=crop&w=900&q=80'
       },
-      shipped: {
-        text: 'Artisans have wrapped your candles in custom kraft boxes and secured them for courier transport.',
+      ready_for_dispatch: {
+        text: 'Your package is securely packed and waiting for courier pickup.',
         next: 'Transit code confirmation details arriving soon.',
         img: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=900&q=80'
       },
-      out_for_delivery: {
-        text: 'Your package is sorted and out for doorstep delivery today.',
-        next: 'Arriving this afternoon.',
+      dispatched: {
+        text: 'Your package is sorted and in transit.',
+        next: 'Arriving soon.',
         img: null
       },
       delivered: {
@@ -323,6 +316,7 @@ export function Tracking() {
                         </div>
                         <div className="timeline-label-column">
                           <span className="timeline-label-text">{step.label}</span>
+                          {step.date && <span className="timeline-date-text" style={{display: 'block', fontSize: '0.8rem', color: '#666', marginTop: '2px'}}>{step.date}</span>}
                         </div>
                       </div>
                     ))}

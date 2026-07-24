@@ -859,56 +859,116 @@
     -webkit-backdrop-filter: blur(12px);
   }
 
+  /* ── Filter bar inner (Collection row + search) ──────────── */
   .shop-filter-bar-inner {
     display: flex;
-    flex-direction: column;
-    padding: 10px 20px 8px;
-    gap: 8px;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 16px 8px;
+    gap: 0;
   }
 
+  /* Collection label + track wrapper take all available space */
   .shop-filter-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
   }
 
+  /* The tiny uppercase label left of each row */
   .shop-filter-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted);
-    opacity: 0.65;
+    opacity: 0.6;
     white-space: nowrap;
     flex-shrink: 0;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    line-height: 1;
+    align-self: center;
   }
 
+  /* Track wrapper fills the rest of the row */
   .shop-categories-track-wrapper {
     flex: 1;
     min-width: 0;
-  }
-
-  .shop-categories-track-wrapper {
-    width: 100%;
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
-
   .shop-categories-track-wrapper::-webkit-scrollbar {
     display: none;
   }
 
-  /* Occasion row — mobile */
+  /* Search box shrinks to icon-only on mobile — sits right of the track */
+  .shop-search-box {
+    flex-shrink: 0;
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    justify-content: center;
+    border: 1px solid var(--line);
+    background: var(--ivory);
+    overflow: hidden;
+    transition: width 300ms cubic-bezier(0.22,1,0.36,1),
+                border-radius 300ms ease,
+                padding 300ms ease;
+    margin-left: 10px;
+  }
+
+  .shop-search-box:focus-within {
+    width: 160px;
+    border-radius: 20px;
+    padding: 0 12px;
+    border-color: var(--gold);
+  }
+
+  .shop-search-icon {
+    flex-shrink: 0;
+    color: var(--muted);
+  }
+
+  .shop-search-input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.85rem;
+    color: var(--ink);
+    width: 0;
+    padding: 0;
+    transition: width 300ms ease;
+  }
+
+  .shop-search-box:focus-within .shop-search-input {
+    width: 100%;
+  }
+
+  /* ── Occasion row ──────────────────────────────────────────── */
   .shop-occasion-bar {
-    padding: 4px 20px 10px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    padding: 2px 16px 10px;
   }
 
   .shop-filter-label--occasion {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0.6;
     flex-shrink: 0;
+    line-height: 1;
   }
 
   .shop-occasion-track {
@@ -917,41 +977,50 @@
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
     padding-bottom: 2px;
+    flex: 1;
   }
   .shop-occasion-track::-webkit-scrollbar {
     display: none;
   }
 
   .shop-occasion-pill {
-    padding: 5px 12px;
+    scroll-snap-align: start;
+    padding: 6px 12px;
     font-size: 0.78rem;
+    min-height: 34px;
   }
 
   .shop-occasion-pill-emoji {
-    font-size: 0.88rem;
+    font-size: 0.9rem;
   }
 
-  /* Active filter summary — mobile */
+  /* ── Active filter summary ─────────────────────────────────── */
   .shop-active-filters-inner {
-    padding: 6px 20px;
+    padding: 6px 16px;
     flex-wrap: wrap;
     gap: 8px;
   }
 
   .shop-active-filters-summary {
-    font-size: 0.76rem;
+    font-size: 0.75rem;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .shop-filter-clear-btn {
     font-size: 0.74rem;
+    padding: 3px 10px;
   }
 
+  /* ── No-results clear ──────────────────────────────────────── */
   .shop-no-results-clear {
     font-size: 0.82rem;
     padding: 8px 18px;
   }
 
+  /* ── Collection tab track ──────────────────────────────────── */
   .shop-categories-track {
     display: flex;
     gap: 6px;
@@ -988,31 +1057,7 @@
     background: var(--gold);
   }
 
-  .shop-search-box {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    padding: 6px 14px;
-    background: var(--ivory);
-    max-width: 100%;
-    width: 100%;
-    min-height: 44px;
-  }
 
-  .shop-search-icon {
-    color: var(--muted);
-  }
-
-  .shop-search-input {
-    border: none;
-    background: transparent;
-    outline: none;
-    font-size: 0.88rem;
-    color: var(--ink);
-    width: 100%;
-  }
 
   .shop-tagline-section {
     padding: 24px 20px 10px;

@@ -13,7 +13,7 @@ export const categories = [
 ];
 
 export const fallbackProducts = categories.map((category, index) => ({
-  _id: `placeholder-${index}`,
+  _id: `6000000000000000000000${index.toString().padStart(2, '0')}`,
   name: category,
   description: 'Made-to-order candle piece. Real photos and copy can be added from the catalog manager.',
   images: ['https://images.unsplash.com/photo-1602874801007-bd458bb1b8b6?auto=format&fit=crop&w=900&q=80'],

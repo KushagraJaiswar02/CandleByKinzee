@@ -13,14 +13,27 @@ export const CATEGORIES = [
 ];
 
 export const ORDER_STATUSES = [
-  'placed',
-  'confirmed',
-  'in_progress',
-  'ready',
-  'shipped',
-  'out_for_delivery',
+  'pending_payment',
+  'payment_received',
+  'order_confirmed',
+  'handcrafting',
+  'packaging',
+  'ready_for_dispatch',
+  'dispatched',
   'delivered',
   'cancelled'
 ];
 
-export const CANCELLABLE_STATUSES = ['placed', 'confirmed'];
+export const CANCELLABLE_STATUSES = ['pending_payment', 'payment_received', 'order_confirmed'];
+
+export const ORDER_STATUS_LABELS = {
+  pending_payment: 'Pending Payment',
+  payment_received: 'Payment Received',
+  order_confirmed: 'Order Confirmed',
+  handcrafting: 'Handcrafting',
+  packaging: 'Packaging',
+  ready_for_dispatch: 'Ready for Dispatch',
+  dispatched: 'Dispatched',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled'
+};

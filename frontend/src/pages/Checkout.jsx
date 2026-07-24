@@ -25,6 +25,20 @@ const STEP_LABELS = ['Contact', 'Delivery', 'Review & Pay'];
 
 const WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '917000701579';
 
+function loadScript(src) {
+  return new Promise((resolve) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export function Checkout() {
   const { cart, cartTotal, clearCart } = useCart();
   const navigate = useNavigate();
@@ -62,12 +76,79 @@ export function Checkout() {
         address: `${delivery.address}, ${delivery.city} - ${delivery.pincode}`,
         pincode: delivery.pincode,
       };
+      
       const response = await api.post('/orders', { items, customer, deliveryMethod: delivery.method });
-      setResult({ ...response.data, customer });
-      clearCart();
+      const { orderNumber, razorpayOrder, amountDueNow } = response.data;
+      
+      // Handle Dev Mode / Missing Keys Mock Payment
+      if (razorpayOrder.id.startsWith('dev_')) {
+        await api.post(`/orders/verify-advance`, {
+          orderNumber,
+          razorpay_order_id: razorpayOrder.id,
+          razorpay_payment_id: `dev_pay_${Date.now()}`,
+          razorpay_signature: 'dev_mock_sig'
+        });
+        setResult({ order: { orderNumber }, customer, amountDueNow });
+        clearCart();
+        return;
+      }
+
+      // Handle real Razorpay flow
+      const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+      if (!res) {
+        setError('Razorpay SDK failed to load. Are you offline?');
+        setSubmitting(false);
+        return;
+      }
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder',
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: "Candle by Kinzee",
+        description: "Order Advance Payment",
+        order_id: razorpayOrder.id,
+        handler: async function (paymentResponse) {
+          try {
+            await api.post(`/orders/verify-advance`, {
+              orderNumber,
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_signature: paymentResponse.razorpay_signature
+            });
+            setResult({ order: { orderNumber }, customer, amountDueNow });
+            clearCart();
+          } catch (err) {
+            setError(err.response?.data?.message || 'Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: customer.name,
+          email: customer.email,
+          contact: customer.phone
+        },
+        theme: {
+          color: "#000000"
+        },
+        modal: {
+          ondismiss: function() {
+            setSubmitting(false);
+          }
+        }
+      };
+      
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.on('payment.failed', function (paymentResponse) {
+        setError(paymentResponse.error.description || 'Payment failed.');
+        setSubmitting(false);
+      });
+      paymentObject.open();
+      
+      // We don't clear setSubmitting(false) here because the modal is open.
+      // It's cleared in ondismiss or on success/failure handlers.
+
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again or contact us on WhatsApp.');
-    } finally {
       setSubmitting(false);
     }
   }

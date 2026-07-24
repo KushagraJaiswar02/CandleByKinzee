@@ -8,7 +8,8 @@ import {
   confirmAdvancePayment,
   createCatalogOrder,
   maybeCreateBalanceLink,
-  trackOrder
+  trackOrder,
+  updateOrderStatus
 } from '../services/orderService.js';
 import { Order } from '../models/Order.js';
 import { ORDER_STATUSES } from '../constants.js';
@@ -73,10 +74,17 @@ ordersRouter.get('/admin/all', requireAdmin, asyncHandler(async (req, res) => {
   res.json({ orders });
 }));
 
-ordersRouter.patch('/admin/:id/status', requireAdmin, asyncHandler(async (req, res) => {
-  const body = z.object({ status: z.enum(ORDER_STATUSES) }).parse(req.body);
-  const order = await Order.findByIdAndUpdate(req.params.id, { status: body.status }, { new: true });
+// GET /api/orders/admin/:id — admin: single order detail
+ordersRouter.get('/admin/:id', requireAdmin, asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
   if (!order) return res.status(404).json({ message: 'Order not found' });
+  res.json({ order });
+}));
+
+// PATCH /api/orders/admin/:id/status — admin: update order status
+ordersRouter.patch('/admin/:id/status', requireAdmin, asyncHandler(async (req, res) => {
+  const body = z.object({ status: z.enum(ORDER_STATUSES), note: z.string().optional() }).parse(req.body);
+  const order = await updateOrderStatus(req.params.id, body.status, body.note);
   const balancePaymentLink = await maybeCreateBalanceLink(order);
   res.json({ order, balancePaymentLink });
 }));
