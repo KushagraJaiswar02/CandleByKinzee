@@ -53,7 +53,7 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.index({ orderNumber: 1, 'customer.phone': 1 });
 
-orderSchema.pre('save', function (next) {
+orderSchema.pre('save', function () {
   if (this.isModified('status')) {
     // Only push if the status is different from the last one recorded (or if it's the first time)
     const lastHistory = this.statusHistory[this.statusHistory.length - 1];
@@ -61,7 +61,6 @@ orderSchema.pre('save', function (next) {
       this.statusHistory.push({ status: this.status, timestamp: new Date() });
     }
   }
-  next();
 });
 
 export const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
