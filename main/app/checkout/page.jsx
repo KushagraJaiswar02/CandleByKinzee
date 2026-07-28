@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +20,7 @@ import {
   MapPin,
   User,
   Phone,
+  Mail,
   ShoppingBag,
 } from 'lucide-react';
 
@@ -55,9 +56,28 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [customer, setCustomer] = useState(null);
 
   const [contact, setContact] = useState({ name: '', email: '' });
   const [delivery, setDelivery] = useState({ address: '', pincode: '', city: '', phone: '', method: 'post' });
+
+  useEffect(() => {
+    async function checkCustomerSession() {
+      try {
+        const res = await api.get('/customer-auth/me');
+        if (res.data.customer) {
+          setCustomer(res.data.customer);
+          setContact({
+            name: res.data.customer.name || '',
+            email: res.data.customer.email || ''
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch customer session at checkout:', err);
+      }
+    }
+    checkCustomerSession();
+  }, []);
 
   const isEmpty = cart.length === 0;
 
@@ -241,6 +261,7 @@ export default function Checkout() {
                 <ContactStep
                   contact={contact}
                   setContact={setContact}
+                  customer={customer}
                   onNext={goNext}
                 />
               </StepPanel>
@@ -299,7 +320,7 @@ function StepPanel({ children }) {
   );
 }
 
-function ContactStep({ contact, setContact, onNext }) {
+function ContactStep({ contact, setContact, customer, onNext }) {
   function handleSubmit(e) {
     e.preventDefault();
     onNext();
@@ -316,8 +337,17 @@ function ContactStep({ contact, setContact, onNext }) {
       </div>
 
       <div className="checkout-reassurance-chip">
-        <Mail size={13} />
-        <span>Guest checkout — no account required</span>
+        {customer ? (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#2e7d32' }}>
+            <Check size={13} />
+            <span>Logged in as <strong>{contact.email}</strong></span>
+          </span>
+        ) : (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Mail size={13} />
+            <span>Guest checkout — no account required</span>
+          </span>
+        )}
       </div>
 
       <div className="checkout-fields-grid">
