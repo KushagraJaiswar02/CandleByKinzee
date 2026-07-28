@@ -1,0 +1,60 @@
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { connectDB } from '@/lib/mongodb.js';
+import { Product } from '@/lib/models/Product.js';
+import { CATEGORIES } from '@/lib/constants.js';
+import { getAdminFromRequest } from '@/lib/auth.js';
+
+const productSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().min(5),
+  images: z.array(z.string().url()).default([]),
+  basePrice: z.number().int().nonnegative(),
+  category: z.enum(CATEGORIES),
+  customizable: z.boolean().default(true),
+  customOptions: z
+    .array(z.object({ label: z.string().min(1), choices: z.array(z.string().min(1)), surcharges: z.record(z.number()).optional() }))
+    .default([]),
+  isActive: z.boolean().default(true)
+});
+
+export async function GET(request) {
+  try {
+    await connectDB();
+    const url = new URL(request.url);
+    const category = url.searchParams.get('category');
+
+    const query = { isActive: true };
+    if (category) query.category = category;
+
+    const products = await Product.find(query).sort({ category: 1, name: 1 });
+    return NextResponse.json({ products });
+
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function POST(request) {
+  try {
+    await connectDB();
+    const admin = getAdminFromRequest(request);
+    if (!admin) {
+      return NextResponse.json({ message: 'Admin login required' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const parsed = productSchema.parse(body);
+    const product = await Product.create({ ...parsed, lastModifiedBy: admin.sub });
+    
+    return NextResponse.json({ product }, { status: 201 });
+
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
+    }
+    console.error(err);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+  }
+}
