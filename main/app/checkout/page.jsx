@@ -71,6 +71,21 @@ export default function Checkout() {
             name: res.data.customer.name || '',
             email: res.data.customer.email || ''
           });
+          const saved = res.data.customer.savedAddresses;
+          if (saved && saved.length > 0) {
+            setDelivery({
+              address: saved[0].street || '',
+              city: saved[0].city || '',
+              pincode: saved[0].zip || '',
+              phone: saved[0].phone || res.data.customer.phone || '',
+              method: 'post'
+            });
+          } else {
+            setDelivery(prev => ({
+              ...prev,
+              phone: res.data.customer.phone || ''
+            }));
+          }
         }
       } catch (err) {
         console.error('Failed to fetch customer session at checkout:', err);
@@ -271,6 +286,7 @@ export default function Checkout() {
                 <DeliveryStep
                   delivery={delivery}
                   setDelivery={setDelivery}
+                  customer={customer}
                   onNext={goNext}
                   onBack={goBack}
                 />
@@ -391,7 +407,7 @@ function ContactStep({ contact, setContact, customer, onNext }) {
   );
 }
 
-function DeliveryStep({ delivery, setDelivery, onNext, onBack }) {
+function DeliveryStep({ delivery, setDelivery, customer, onNext, onBack }) {
   function handleSubmit(e) {
     e.preventDefault();
     onNext();
@@ -406,6 +422,45 @@ function DeliveryStep({ delivery, setDelivery, onNext, onBack }) {
           Your handcrafted candles will be carefully packaged and dispatched from our Indore studio.
         </p>
       </div>
+
+      {customer && customer.savedAddresses && customer.savedAddresses.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          <label className="checkout-field-label">
+            <span>Select Saved Address</span>
+            <select
+              className="checkout-select"
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '6px',
+                border: '1px solid #ddd',
+                backgroundColor: '#fff',
+                fontSize: '14px',
+                color: '#333'
+              }}
+              onChange={(e) => {
+                const idx = parseInt(e.target.value, 10);
+                if (idx >= 0 && idx < customer.savedAddresses.length) {
+                  const addr = customer.savedAddresses[idx];
+                  setDelivery({
+                    ...delivery,
+                    address: addr.street || '',
+                    city: addr.city || '',
+                    pincode: addr.zip || '',
+                    phone: addr.phone || customer.phone || ''
+                  });
+                }
+              }}
+            >
+              {customer.savedAddresses.map((addr, idx) => (
+                <option key={addr._id || idx} value={idx}>
+                  [{addr.label}] {addr.fullName} — {addr.street}, {addr.city} ({addr.zip})
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
 
       <div className="checkout-fields-grid">
         <label className="checkout-field-label checkout-field-full">
