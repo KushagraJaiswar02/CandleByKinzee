@@ -14,6 +14,13 @@ export function StudioContactCard({ type, data }) {
   let emailSubject = '';
   let emailBody = '';
 
+  const [refId, setRefId] = React.useState(data?.refId || 9999);
+  React.useEffect(() => {
+    if (!data?.refId) {
+      setRefId(Math.floor(1000 + Math.random() * 9000));
+    }
+  }, [data]);
+
   if (type === 'product' && data) {
     title = `Questions about the ${data.name}?`;
     waMessage = 'Hello!';
@@ -36,7 +43,6 @@ export function StudioContactCard({ type, data }) {
     emailBody = `Hi Kinzee,\n\nMy name is ${clientName}. I'd like to talk about custom request #CR-${id} (Current status: ${status}).`;
   } else if (type === 'bulk') {
     title = 'Planning a large celebration?';
-    const refId = data?.refId || Math.floor(1000 + Math.random() * 9000);
     waMessage = "Hello! I'd like to discuss a bulk order.";
     emailSubject = `Bulk Inquiry - BQ${refId}`;
     emailBody = `Hello Kinzee,\n\nWe are looking to place a bulk inquiry (Reference: BQ${refId}). Let's discuss quantities and custom favors.`;

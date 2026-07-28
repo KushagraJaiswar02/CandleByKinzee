@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   motion,
@@ -65,7 +65,14 @@ function BokehLights({ reduceMotion }) {
 }
 
 function LightParticles({ reduceMotion }) {
-  if (reduceMotion) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (reduceMotion || !mounted) return null;
+
   const particles = Array.from({ length: 10 });
   return (
     <div className="hero-particles" aria-hidden="true">
