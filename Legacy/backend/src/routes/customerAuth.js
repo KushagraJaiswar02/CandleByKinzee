@@ -30,6 +30,7 @@ export async function requireCustomer(req, res, next) {
 // 1. Request OTP (returns simulated OTP in response for easy testing)
 customerAuthRouter.post('/request-otp', asyncHandler(async (req, res) => {
   const { phone } = z.object({ phone: z.string().min(8).max(15) }).parse(req.body);
+
   
   // Simulated OTP logic - always 123456 in dev/test environment
   res.json({ 
