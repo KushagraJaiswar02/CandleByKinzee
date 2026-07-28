@@ -30,7 +30,7 @@ jobs:
             -   name: Checkout repository
                 uses: actions/checkout@v4
                 
-            # REQUIRED: Setup Java 17 for CodeScan/SonarScanner
+            # Keep Java 17 block so SonarScanner doesn't crash on ClassVersionError
             -   name: Set up JDK 17
                 uses: actions/setup-java@v4
                 with:
@@ -45,9 +45,9 @@ jobs:
                     key: ${{ runner.os }}-sonar
                     restore-keys: ${{ runner.os }}-sonar
                     
-            # FIX: Use 'v2' to fix the "version not found" and Node 20 errors
+            # FIX: Targeted the official main branch since no version tags exist
             -   name: Run Analysis
-                uses: codescan-io/codescan-scanner-action@v2
+                uses: codescan-io/codescan-scanner-action@main
                 with:
                     login: ${{ secrets.CODESCAN_AUTH_TOKEN }}
                     organization: ${{ secrets.CODESCAN_ORGANIZATION_KEY }}
