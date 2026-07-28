@@ -13,9 +13,9 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const { name, email } = z.object({ 
+    const { name, phone } = z.object({ 
       name: z.string().min(2), 
-      email: z.string().email().optional().or(z.literal('')) 
+      phone: z.string().optional().or(z.literal(''))
     }).parse(body);
 
     const customer = await Customer.findById(customerSession.sub);
@@ -24,7 +24,9 @@ export async function PUT(request) {
     }
 
     customer.name = name;
-    customer.email = email || '';
+    if (phone !== undefined) {
+      customer.phone = phone;
+    }
     await customer.save();
 
     return NextResponse.json({ success: true, customer });

@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, ShieldCheck, User, MapPin, Package, Heart, Receipt, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { X, Mail, ShieldCheck, User, MapPin, Package, Heart, Receipt, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api.js';
 import { FlameButton } from './FlameButton.jsx';
 
 export function CustomerAuthSheet({ isOpen, onClose }) {
-  const [step, setStep] = useState('phone');
-  const [phone, setPhone] = useState('');
+  const [step, setStep] = useState('email-login'); // email-login, otp, profile-setup, dashboard
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [customer, setCustomer] = useState(null);
   
@@ -16,7 +16,6 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState('orders');
   
   const [profileName, setProfileName] = useState('');
-  const [profileEmail, setProfileEmail] = useState('');
   
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [newAddress, setNewAddress] = useState({
@@ -40,10 +39,10 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
         setStep('dashboard');
         fetchDashboard();
       } else {
-        setStep('phone');
+        setStep('email-login');
       }
     } catch (err) {
-      setStep('phone');
+      setStep('email-login');
     }
   }
 
@@ -57,7 +56,6 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
       if (res.data.customer) {
         setCustomer(res.data.customer);
         setProfileName(res.data.customer.name || '');
-        setProfileEmail(res.data.customer.email || '');
       }
     } catch (err) {
       console.error(err);
@@ -66,14 +64,14 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
 
   async function handleRequestOtp(e) {
     e.preventDefault();
-    if (!phone) return;
+    if (!email) return;
     setLoading(true);
     setError('');
     try {
-      await api.post('/customer-auth/request-otp', { phone });
+      await api.post('/customer-auth/request-otp', { email });
       setStep('otp');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to request OTP');
+      setError(err.response?.data?.message || 'Failed to request verification code');
     } finally {
       setLoading(false);
     }
@@ -85,7 +83,7 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/customer-auth/verify-otp', { phone, otp });
+      const res = await api.post('/customer-auth/verify-otp', { email, otp });
       const user = res.data.customer;
       setCustomer(user);
       
@@ -96,7 +94,7 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
         fetchDashboard();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid OTP code');
+      setError(err.response?.data?.message || 'Invalid verification code');
     } finally {
       setLoading(false);
     }
@@ -107,7 +105,7 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
     setLoading(true);
     setError('');
     try {
-      const res = await api.put('/customer-auth/profile', { name: profileName, email: profileEmail });
+      const res = await api.put('/customer-auth/profile', { name: profileName });
       setCustomer(res.data.customer);
       setStep('dashboard');
       fetchDashboard();
@@ -146,9 +144,9 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
     try {
       await api.post('/customer-auth/logout');
       setCustomer(null);
-      setPhone('');
+      setEmail('');
       setOtp('');
-      setStep('phone');
+      setStep('email-login');
     } catch (err) {
       console.error(err);
     }
@@ -156,8 +154,8 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
 
   useEffect(() => {
     const handleTrigger = (e) => {
-      if (e.detail?.phone) {
-        setPhone(e.detail.phone);
+      if (e.detail?.email) {
+        setEmail(e.detail.email);
       }
     };
     window.addEventListener('open-customer-auth', handleTrigger);
@@ -193,7 +191,7 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
             <div className="auth-sheet-body">
               {error && <div className="auth-error-message">{error}</div>}
 
-              {step === 'phone' && (
+              {step === 'email-login' && (
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -206,21 +204,21 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                   
                   <form onSubmit={handleRequestOtp} className="auth-phone-form">
                     <label className="auth-input-label">
-                      <span>Phone Number</span>
+                      <span>Email Address</span>
                       <div className="auth-input-icon-wrapper">
-                        <Phone size={16} className="auth-icon" />
+                        <Mail size={16} className="auth-icon" />
                         <input 
-                          type="tel" 
+                          type="email" 
                           required 
-                          placeholder="e.g. +91 70007 01579" 
-                          value={phone} 
-                          onChange={(e) => setPhone(e.target.value)} 
+                          placeholder="e.g. customer@example.com" 
+                          value={email} 
+                          onChange={(e) => setEmail(e.target.value.toLowerCase())} 
                         />
                       </div>
                     </label>
 
                     <FlameButton type="submit" disabled={loading}>
-                      {loading ? 'Sending Code...' : 'Continue with Phone Number'}
+                      {loading ? 'Sending Code...' : 'Continue with Email'}
                     </FlameButton>
                   </form>
 
@@ -241,7 +239,7 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                   className="auth-step-panel"
                 >
                   <p className="auth-step-intro">
-                    We sent a verification code to <strong>{phone}</strong>. Enter <strong>123456</strong> to verify.
+                    We sent a 6-digit verification code to <strong>{email}</strong>. Please check your inbox.
                   </p>
 
                   <form onSubmit={handleVerifyOtp} className="auth-otp-form">
@@ -266,8 +264,8 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                     </FlameButton>
                   </form>
 
-                  <button type="button" onClick={() => setStep('phone')} className="auth-back-link">
-                    Back to phone number
+                  <button type="button" onClick={() => setStep('email-login')} className="auth-back-link">
+                    Back to Email
                   </button>
                 </motion.div>
               )}
@@ -280,7 +278,7 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                 >
                   <h3>Almost there</h3>
                   <p className="auth-step-intro">
-                    Let us know your name and email to personalize your Kinzee Studio dashboard.
+                    Let us know your name to personalize your Kinzee Studio dashboard.
                   </p>
 
                   <form onSubmit={handleCompleteProfile} className="auth-profile-setup-form">
@@ -295,19 +293,9 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                       />
                     </label>
 
-                    <label className="auth-input-label">
-                      <span>Email Address (Optional)</span>
-                      <input 
-                        type="email" 
-                        placeholder="e.g. eleanor@example.com" 
-                        value={profileEmail} 
-                        onChange={(e) => setProfileEmail(e.target.value)} 
-                      />
-                    </label>
-
                     <FlameButton type="submit" disabled={loading}>
                       Create My Profile
-                  </FlameButton>
+                    </FlameButton>
                   </form>
                 </motion.div>
               )}
@@ -329,7 +317,7 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                         Logout
                       </button>
                     </div>
-                    <p className="customer-meta-phone">{customer.phone}</p>
+                    <p className="customer-meta-phone">{customer.email}</p>
                   </div>
 
                   <div className="auth-dashboard-tabs">
@@ -367,7 +355,7 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                     {activeTab === 'orders' && (
                       <div className="dashboard-orders-list">
                         {dashboardData.orders.length === 0 ? (
-                          <p className="tab-empty-text">No orders placed yet. Orders matching your phone number will appear here automatically.</p>
+                          <p className="tab-empty-text">No orders placed yet. Orders matching your email will appear here automatically.</p>
                         ) : (
                           dashboardData.orders.map((ord) => (
                             <div key={ord.orderNumber} className="dashboard-order-card">
@@ -398,7 +386,7 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                     {activeTab === 'quotes' && (
                       <div className="dashboard-quotes-list">
                         {dashboardData.quotes.length === 0 ? (
-                          <p className="tab-empty-text">No custom briefs submitted yet. Custom creations matching your phone number will show here.</p>
+                          <p className="tab-empty-text">No custom briefs submitted yet. Custom creations matching your email will show here.</p>
                         ) : (
                           dashboardData.quotes.map((q) => (
                             <div key={q._id} className="dashboard-quote-card">
@@ -570,17 +558,17 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                           </label>
 
                           <label className="auth-input-label">
-                            <span>Email Address (Optional)</span>
+                            <span>Email Address (Account Identifier)</span>
                             <input 
                               type="email" 
-                              placeholder="eleanor@example.com" 
-                              value={profileEmail} 
-                              onChange={(e) => setProfileEmail(e.target.value)} 
+                              disabled 
+                              value={customer.email} 
+                              className="auth-input-disabled"
                             />
                           </label>
 
                           <button type="submit" className="profile-update-submit-btn">
-                            Update Details
+                            Update Profile Name
                           </button>
                         </form>
 

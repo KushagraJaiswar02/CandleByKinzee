@@ -12,9 +12,9 @@ const addressSchema = new mongoose.Schema({
 
 const customerSchema = new mongoose.Schema(
   {
-    phone: { type: String, required: true, unique: true, trim: true, index: true },
+    email: { type: String, required: true, unique: true, trim: true, lowercase: true, index: true },
+    phone: { type: String, trim: true, default: '' },
     name: { type: String, trim: true, default: '' },
-    email: { type: String, trim: true, lowercase: true, default: '' },
     savedAddresses: [addressSchema]
   },
   { timestamps: true }

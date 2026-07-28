@@ -14,5 +14,6 @@ export const env = {
   adminWhatsappNumber: process.env.ADMIN_WHATSAPP_NUMBER || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '',
   whatsappCloudPhoneNumberId: process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID || '',
   whatsappCloudAccessToken: process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '',
+  urbSecretKey: process.env.URB_SECRET_KEY || '',
   isProduction: process.env.NODE_ENV === 'production'
 };

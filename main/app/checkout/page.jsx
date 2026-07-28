@@ -56,8 +56,8 @@ export default function Checkout() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
 
-  const [contact, setContact] = useState({ name: '', phone: '', email: '' });
-  const [delivery, setDelivery] = useState({ address: '', pincode: '', city: '', method: 'post' });
+  const [contact, setContact] = useState({ name: '', email: '' });
+  const [delivery, setDelivery] = useState({ address: '', pincode: '', city: '', phone: '', method: 'post' });
 
   const isEmpty = cart.length === 0;
 
@@ -76,8 +76,8 @@ export default function Checkout() {
       }));
       const customer = {
         name: contact.name,
-        phone: contact.phone,
         email: contact.email,
+        phone: delivery.phone,
         address: `${delivery.address}, ${delivery.city} - ${delivery.pincode}`,
         pincode: delivery.pincode,
       };
@@ -311,12 +311,12 @@ function ContactStep({ contact, setContact, onNext }) {
         <p className="eyebrow">Step 1 of 3</p>
         <h2 className="checkout-step-heading">Who's this for?</h2>
         <p className="checkout-step-subtext">
-          No account needed. We'll send order updates over WhatsApp.
+          No account needed. We'll send order updates and digital invoice to your email.
         </p>
       </div>
 
       <div className="checkout-reassurance-chip">
-        <MessageCircle size={13} />
+        <Mail size={13} />
         <span>Guest checkout — no account required</span>
       </div>
 
@@ -337,27 +337,17 @@ function ContactStep({ contact, setContact, onNext }) {
 
         <label className="checkout-field-label">
           <span>
-            <Phone size={13} />
-            WhatsApp Number
+            <Mail size={13} />
+            Email Address
           </span>
           <input
-            type="tel"
+            type="email"
             required
-            placeholder="e.g. 98765 43210"
-            value={contact.phone}
-            onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+            placeholder="e.g. customer@example.com"
+            value={contact.email}
+            onChange={(e) => setContact({ ...contact, email: e.target.value.toLowerCase() })}
           />
           <small>We'll send your order confirmation here</small>
-        </label>
-
-        <label className="checkout-field-label">
-          <span>Email Address <span className="checkout-optional-tag">(Optional)</span></span>
-          <input
-            type="email"
-            placeholder="Your email address"
-            value={contact.email}
-            onChange={(e) => setContact({ ...contact, email: e.target.value })}
-          />
         </label>
       </div>
 
@@ -424,6 +414,21 @@ function DeliveryStep({ delivery, setDelivery, onNext, onBack }) {
             value={delivery.pincode}
             onChange={(e) => setDelivery({ ...delivery, pincode: e.target.value })}
           />
+        </label>
+
+        <label className="checkout-field-label checkout-field-full">
+          <span>
+            <Phone size={13} />
+            Contact Phone Number (For Shipping Partner)
+          </span>
+          <input
+            type="tel"
+            required
+            placeholder="e.g. 9876543210"
+            value={delivery.phone}
+            onChange={(e) => setDelivery({ ...delivery, phone: e.target.value })}
+          />
+          <small>Required by couriers to reach you during delivery</small>
         </label>
       </div>
 
@@ -496,8 +501,7 @@ function ReviewStep({ contact, delivery, cart, cartTotal, onBack, onPlace, submi
         </div>
         <div className="checkout-review-details">
           <p>{contact.name}</p>
-          <p>{contact.phone}</p>
-          {contact.email && <p>{contact.email}</p>}
+          <p>{contact.email}</p>
         </div>
       </div>
 
@@ -509,6 +513,7 @@ function ReviewStep({ contact, delivery, cart, cartTotal, onBack, onPlace, submi
         <div className="checkout-review-details">
           <p>{delivery.address}</p>
           <p>{delivery.city} — {delivery.pincode}</p>
+          <p>T: {delivery.phone}</p>
           <p className="checkout-review-method">
             {delivery.method === 'post' ? '📦 India Post' : '🏠 Personal Pickup'}
           </p>

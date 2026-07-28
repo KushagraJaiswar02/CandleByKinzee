@@ -6,6 +6,9 @@ import { AppError } from '../utils/errors.js';
 let razorpayClient;
 
 function getClient() {
+  if (env.isProduction && (!env.razorpayKeyId || !env.razorpayKeySecret)) {
+    throw new AppError('Razorpay credentials are not configured in production environment', 500);
+  }
   if (!razorpayClient) {
     razorpayClient = new Razorpay({
       key_id: env.razorpayKeyId || 'rzp_test_dev',
@@ -16,9 +19,17 @@ function getClient() {
 }
 
 export function verifyRazorpaySignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) {
-  if (razorpay_order_id?.startsWith('dev_') && !env.razorpayKeySecret) {
-    return true; // Bypass in dev mode without keys
+  if (env.isProduction) {
+    if (!env.razorpayKeySecret) {
+      throw new AppError('Razorpay Key Secret is missing in production environment', 500);
+    }
+  } else {
+    // Local bypass in dev mode when keys are not configured
+    if (razorpay_order_id?.startsWith('dev_') && !env.razorpayKeySecret) {
+      return true;
+    }
   }
+
   const payload = `${razorpay_order_id}|${razorpay_payment_id}`;
   const expected = crypto
     .createHmac('sha256', env.razorpayKeySecret || 'dev_secret')
@@ -30,6 +41,9 @@ export function verifyRazorpaySignature({ razorpay_order_id, razorpay_payment_id
 }
 
 export function verifyWebhookSignature(rawBody, signature) {
+  if (env.isProduction && !env.razorpayWebhookSecret) {
+    throw new AppError('Razorpay Webhook Secret is missing in production environment', 500);
+  }
   const expected = crypto
     .createHmac('sha256', env.razorpayWebhookSecret || 'dev_webhook_secret')
     .update(rawBody)
@@ -41,6 +55,9 @@ export function verifyWebhookSignature(rawBody, signature) {
 
 export async function createAdvancePaymentOrder(order) {
   if (!env.razorpayKeyId || !env.razorpayKeySecret) {
+    if (env.isProduction) {
+      throw new AppError('Razorpay keys are missing in production environment', 500);
+    }
     return { id: `dev_order_${order.orderNumber}`, amount: order.paymentPlan.advanceAmount * 100, currency: 'INR' };
   }
   return getClient().orders.create({
@@ -53,6 +70,9 @@ export async function createAdvancePaymentOrder(order) {
 
 export async function createBalancePaymentLink(order) {
   if (!env.razorpayKeyId || !env.razorpayKeySecret) {
+    if (env.isProduction) {
+      throw new AppError('Razorpay keys are missing in production environment', 500);
+    }
     return { id: `dev_link_${order.orderNumber}`, short_url: `https://example.com/pay/${order.orderNumber}` };
   }
   return getClient().paymentLink.create({
@@ -64,7 +84,7 @@ export async function createBalancePaymentLink(order) {
       email: order.customer.email,
       contact: order.customer.phone
     },
-    notify: { sms: true, email: Boolean(order.customer.email) },
+    notify: { sms: false, email: Boolean(order.customer.email) },
     notes: { orderId: String(order._id), phase: 'balance' }
   });
 }
@@ -72,7 +92,12 @@ export async function createBalancePaymentLink(order) {
 export async function refundAdvancePayment(order) {
   if (order.razorpay?.refundId) return { id: order.razorpay.refundId, duplicate: true };
   if (!order.razorpay?.advancePaymentId) throw new AppError('No advance payment to refund', 422);
-  if (!env.razorpayKeyId || !env.razorpayKeySecret) return { id: `dev_refund_${order.orderNumber}` };
+  if (!env.razorpayKeyId || !env.razorpayKeySecret) {
+    if (env.isProduction) {
+      throw new AppError('Razorpay keys are missing in production environment', 500);
+    }
+    return { id: `dev_refund_${order.orderNumber}` };
+  }
   return getClient().payments.refund(order.razorpay.advancePaymentId, {
     amount: order.paymentPlan.advanceAmount * 100,
     notes: { orderId: String(order._id) }

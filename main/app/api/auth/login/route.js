@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { connectDB } from '@/lib/mongodb.js';
 import { Admin } from '@/lib/models/Admin.js';
 import { signToken, createAuthCookie } from '@/lib/auth.js';
+import { rateLimit } from '@/lib/rateLimit.js';
 
 export async function POST(request) {
   try {
@@ -13,6 +14,14 @@ export async function POST(request) {
       email: z.string().email(),
       password: z.string().min(8)
     }).parse(body);
+
+    // Rate Limit admin login attempts by IP (max 10 attempts per 15 minutes)
+    const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
+    const rateLimitKey = `admin_login:${ip}`;
+    const rateResult = await rateLimit(rateLimitKey, 10, 900);
+    if (!rateResult.success) {
+      return NextResponse.json({ message: 'Too many login attempts. Please try again in 15 minutes.' }, { status: 429 });
+    }
 
     const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin) {

@@ -18,8 +18,8 @@ export async function GET(request) {
       return NextResponse.json({ message: 'Customer not found' }, { status: 404 });
     }
 
-    const orders = await Order.find({ 'customer.phone': customer.phone }).sort({ createdAt: -1 });
-    const quotes = await QuoteRequest.find({ 'customer.phone': customer.phone }).sort({ createdAt: -1 });
+    const orders = await Order.find({ 'customer.email': customer.email }).sort({ createdAt: -1 });
+    const quotes = await QuoteRequest.find({ 'customer.email': customer.email }).sort({ createdAt: -1 });
 
     return NextResponse.json({
       customer,
