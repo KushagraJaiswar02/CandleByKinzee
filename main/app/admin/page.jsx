@@ -101,7 +101,7 @@ export default function Admin() {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
+  const [loadingOrderId, setLoadingOrderId] = useState(null);
 
   // Form error states
   const [formError, setFormError] = useState('');
@@ -183,7 +183,7 @@ export default function Admin() {
   }
 
   async function openOrderDetails(id) {
-    setIsFetchingDetails(true);
+    setLoadingOrderId(id);
     try {
       const res = await api.get(`/orders/admin/${id}`);
       setSelectedOrder(res.data.order);
@@ -191,7 +191,7 @@ export default function Admin() {
     } catch (err) {
       showToast('Failed to load order details', 'error');
     } finally {
-      setIsFetchingDetails(false);
+      setLoadingOrderId(null);
     }
   }
 
@@ -550,7 +550,13 @@ export default function Admin() {
                           <td><span className={`badge-pill ${order.status}`}>{ORDER_STATUS_LABELS[order.status] || order.status}</span></td>
                           <td>₹{order.paymentPlan.total.toLocaleString('en-IN')}</td>
                           <td>
-                            <button className="table-action-btn" onClick={() => openOrderDetails(order._id)}>View</button>
+                            <button 
+                              className="table-action-btn" 
+                              disabled={loadingOrderId === order._id} 
+                              onClick={() => openOrderDetails(order._id)}
+                            >
+                              {loadingOrderId === order._id ? 'Loading...' : 'View'}
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -603,7 +609,13 @@ export default function Admin() {
                         <td><span className={`badge-pill ${order.status}`}>{ORDER_STATUS_LABELS[order.status] || order.status}</span></td>
                         <td>₹{order.paymentPlan.total.toLocaleString('en-IN')}</td>
                         <td>
-                          <button className="table-action-btn" onClick={() => openOrderDetails(order._id)}>View Details</button>
+                          <button 
+                            className="table-action-btn" 
+                            disabled={loadingOrderId === order._id} 
+                            onClick={() => openOrderDetails(order._id)}
+                          >
+                            {loadingOrderId === order._id ? 'Loading...' : 'View Details'}
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -624,16 +636,20 @@ export default function Admin() {
                   <thead>
                     <tr>
                       <th>Customer</th>
+                      <th>Contact Info</th>
                       <th>Status</th>
-                      <th>Proposed Price</th>
+                      <th>Target Date</th>
+                      <th>Description</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {quotes.map((quote) => (
-                      <tr key={quote._id}>
-                        <td><strong>{quote.customer.name}</strong></td>
-                        <td><span className={`badge-pill quote-${quote.status}`}>{quote.status}</span></td>
-                        <td>{quote.quotedPrice ? `₹${quote.quotedPrice.toLocaleString('en-IN')}` : 'Calculating...'}</td>
+                    {quotes.map((q) => (
+                      <tr key={q._id}>
+                        <td><strong>{q.customer.name}</strong></td>
+                        <td>{q.customer.email || q.customer.phone}</td>
+                        <td><span className={`badge-pill ${q.status}`}>{q.status}</span></td>
+                        <td>{q.timeline || 'Flexible'}</td>
+                        <td style={{ maxWidth: '280px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{q.description}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -648,8 +664,8 @@ export default function Admin() {
           <div className="tab-pane-container animate-fade-in">
             <div className="pane-header-actions">
               <div>
-                <h1 className="pane-title">Catalog Manager</h1>
-                <p className="pane-subtitle">Update and add handcrafted candles in the catalog</p>
+                <h1 className="pane-title">Product Catalog</h1>
+                <p className="pane-subtitle">Manage hand-poured candle inventory and scents</p>
               </div>
               <button onClick={() => { setFormError(''); setEditProductId(null); setShowProductForm(true); }} className="create-action-trigger-btn">
                 <Plus size={16} /> Add Product
@@ -660,28 +676,28 @@ export default function Admin() {
               <div className="drawer-overlay-card">
                 <div className="drawer-content-box">
                   <div className="drawer-header">
-                    <h3>{editProductId ? 'Edit Product details' : 'Add Product to Catalog'}</h3>
-                    <button onClick={() => { setShowProductForm(false); setEditProductId(null); }} className="close-btn"><X size={18}/></button>
+                    <h3>{editProductId ? 'Edit Product' : 'Add New Candle'}</h3>
+                    <button onClick={() => setShowProductForm(false)} className="close-btn"><X size={18}/></button>
                   </div>
                   
                   <form onSubmit={handleAddProduct} className="drawer-form-layout">
                     {formError && <div className="login-error-alert"><AlertCircle size={14} />{formError}</div>}
                     
                     <label className="form-field">
-                      <span>Product Name</span>
+                      <span>Candle Name</span>
                       <input 
-                        type="text" required
-                        placeholder="e.g. Amber Sandalwood Glass"
+                        type="text" required minLength={2}
+                        placeholder="e.g. Scented Botanical Jar"
                         value={newProduct.name}
                         onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                       />
                     </label>
 
                     <label className="form-field">
-                      <span>Detailed Description</span>
+                      <span>Description</span>
                       <textarea 
-                        required rows={3}
-                        placeholder="Materials, scents, burn-time..."
+                        required minLength={5} rows={3}
+                        placeholder="Soy wax infusion with essential oils..."
                         value={newProduct.description}
                         onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                       />
@@ -689,9 +705,9 @@ export default function Admin() {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                       <label className="form-field">
-                        <span>Base Price (₹)</span>
+                        <span>Price (₹)</span>
                         <input 
-                          type="number" required min={1}
+                          type="number" required min={0}
                           value={newProduct.basePrice}
                           onChange={(e) => setNewProduct({ ...newProduct, basePrice: Number(e.target.value) })}
                         />
@@ -703,15 +719,17 @@ export default function Admin() {
                           onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
                         >
                           <option value="signature">Signature</option>
-                          <option value="luxury">Luxury</option>
-                          <option value="gift-box">Gift Boxes</option>
-                          <option value="decor">Decor</option>
+                          <option value="Floral candle bouquets">Floral Candle Bouquets</option>
+                          <option value="Daisy & glass candles">Daisy & Glass Candles</option>
+                          <option value="Gift box sets">Gift Box Sets</option>
+                          <option value="Cocktail candle collection">Cocktail Candle Collection</option>
+                          <option value="Festive sweet collection">Festive Sweet Collection</option>
                         </select>
                       </label>
                     </div>
 
                     <label className="form-field">
-                      <span>Main Image URL</span>
+                      <span>Image URL</span>
                       <input 
                         type="url" required
                         value={newProduct.images[0]}
@@ -744,7 +762,11 @@ export default function Admin() {
                     {products.map(p => (
                       <tr key={p._id}>
                         <td>
-                          <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1602874801007-bd458bb1b8b6?auto=format&fit=crop&w=40&q=70'} alt="" className="product-list-thumb" />
+                          <img 
+                            src={p.images?.[0] || 'https://images.unsplash.com/photo-1602874801007-bd458bb1b8b6?auto=format&fit=crop&w=60&q=70'} 
+                            alt={p.name} 
+                            style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }}
+                          />
                         </td>
                         <td><strong>{p.name}</strong></td>
                         <td><span className="category-text">{p.category}</span></td>
@@ -870,65 +892,153 @@ export default function Admin() {
       </section>
 
       {/* OVERLAY MODAL: ORDER DETAILS */}
-      {selectedOrder && (
-        <div className="details-overlay-container">
-          <div className="details-modal-box animate-scale-up">
-            <button className="details-modal-close-btn" onClick={() => setSelectedOrder(null)}><X size={18}/></button>
-            <div className="modal-header-section">
-              <span className={`status-pill ${selectedOrder.status}`}>{ORDER_STATUS_LABELS[selectedOrder.status]}</span>
-              <h2>Order #{selectedOrder.orderNumber}</h2>
-              <p className="date-subtitle">Placed on {new Date(selectedOrder.createdAt).toLocaleString()}</p>
-            </div>
+      {selectedOrder && (() => {
+        const PIPELINE = [
+          'pending_payment',
+          'payment_received',
+          'order_confirmed',
+          'handcrafting',
+          'packaging',
+          'ready_for_dispatch',
+          'dispatched',
+          'delivered'
+        ];
+        const currentIdx = PIPELINE.indexOf(selectedOrder.status);
+        const nextStatus = currentIdx >= 0 && currentIdx < PIPELINE.length - 1 ? PIPELINE[currentIdx + 1] : null;
 
-            <div className="modal-grid-content">
-              <div className="modal-details-left">
-                <div className="meta-info-card">
-                  <h4 className="card-subheading">Shipping Details</h4>
-                  <p><strong>Customer Name:</strong> {selectedOrder.customer.name}</p>
-                  <p><strong>Address:</strong> {selectedOrder.customer.address}</p>
-                  <p><strong>Phone:</strong> {selectedOrder.customer.phone}</p>
-                </div>
-                <div className="meta-info-card">
-                  <h4 className="card-subheading">Purchased Items</h4>
-                  <ul className="modal-items-list">
-                    {selectedOrder.items.map((item, idx) => (
-                      <li key={item._lineId || idx} className="modal-item-row">
-                        <strong>{item.name}</strong>
-                        <span>&times;{item.qty} — ₹{item.priceAtOrder * item.qty}</span>
-                      </li>
-                    ))}
-                  </ul>
+        return (
+          <div className="details-overlay-container">
+            <div className="details-modal-box animate-scale-up">
+              <button className="details-modal-close-btn" onClick={() => setSelectedOrder(null)}><X size={18}/></button>
+              <div className="modal-header-section">
+                <span className={`status-pill ${selectedOrder.status}`}>{ORDER_STATUS_LABELS[selectedOrder.status] || selectedOrder.status}</span>
+                <h2>Order #{selectedOrder.orderNumber}</h2>
+                <p className="date-subtitle">Placed on {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+              </div>
+
+              {/* Fulfilment Pipeline Stepper */}
+              <div className="modal-pipeline-stepper" style={{ margin: '16px 20px', padding: '16px', background: '#fafafa', borderRadius: '12px', border: '1px solid #eaeaea' }}>
+                <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#888', fontWeight: 600, marginBottom: '12px' }}>Fulfillment Pipeline</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', overflowX: 'auto', paddingBottom: '4px' }}>
+                  {PIPELINE.map((st, idx) => {
+                    const isDone = currentIdx >= 0 && idx < currentIdx;
+                    const isCurrent = currentIdx === idx;
+                    return (
+                      <button
+                        key={st}
+                        disabled={isActionLoading || isCurrent}
+                        onClick={() => updateOrderStatus(st)}
+                        title={`Click to set status to ${ORDER_STATUS_LABELS[st]}`}
+                        style={{
+                          flex: 1,
+                          minWidth: '85px',
+                          padding: '8px 4px',
+                          border: isCurrent ? '1.5px solid #b58a3c' : '1px solid #e5e5e5',
+                          background: isCurrent ? '#fef7eb' : isDone ? '#ecfdf5' : '#ffffff',
+                          borderRadius: '8px',
+                          cursor: isCurrent ? 'default' : 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s ease',
+                          opacity: isActionLoading ? 0.7 : 1
+                        }}
+                      >
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: isCurrent ? '#b58a3c' : isDone ? '#10b981' : '#e5e5e5',
+                          color: '#fff',
+                          fontSize: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 'bold'
+                        }}>
+                          {isDone ? <Check size={12}/> : (idx + 1)}
+                        </div>
+                        <span style={{ fontSize: '10px', fontWeight: isCurrent ? 700 : 500, color: isCurrent ? '#b58a3c' : isDone ? '#065f46' : '#666', textAlign: 'center', lineHeight: 1.2 }}>
+                          {ORDER_STATUS_LABELS[st]}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="modal-details-right">
-                <h4 className="card-subheading">Update Status Workflow</h4>
-                <div className="status-timeline-actions">
-                  {ORDER_STATUSES.map(st => (
-                    <button
-                      key={st}
-                      disabled={st === selectedOrder.status || isActionLoading}
-                      onClick={() => updateOrderStatus(st)}
-                      className={`status-workflow-btn ${selectedOrder.status === st ? 'active' : ''}`}
-                    >
-                      Set to {ORDER_STATUS_LABELS[st]}
-                    </button>
-                  ))}
+              <div className="modal-grid-content">
+                <div className="modal-details-left">
+                  <div className="meta-info-card">
+                    <h4 className="card-subheading">Shipping Details</h4>
+                    <p><strong>Customer Name:</strong> {selectedOrder.customer.name}</p>
+                    <p><strong>Address:</strong> {selectedOrder.customer.address}</p>
+                    <p><strong>Phone:</strong> {selectedOrder.customer.phone}</p>
+                  </div>
+                  <div className="meta-info-card">
+                    <h4 className="card-subheading">Purchased Items</h4>
+                    <ul className="modal-items-list">
+                      {selectedOrder.items.map((item, idx) => (
+                        <li key={item._lineId || idx} className="modal-item-row">
+                          <strong>{item.name}</strong>
+                          <span>&times;{item.qty} — ₹{item.priceAtOrder * item.qty}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <label className="internal-notes-field">
-                  <span>Internal Log Note</span>
-                  <textarea
-                    rows={2}
-                    placeholder="Provide logistics note..."
-                    value={statusUpdateNote}
-                    onChange={(e) => setStatusUpdateNote(e.target.value)}
-                  />
-                </label>
+
+                <div className="modal-details-right">
+                  <h4 className="card-subheading">Update Status Workflow</h4>
+
+                  {/* Primary Next Action Stepper */}
+                  {nextStatus && (
+                    <div style={{ marginBottom: '16px', padding: '14px', background: '#fef7eb', border: '1px solid #fef3c7', borderRadius: '10px' }}>
+                      <p style={{ fontSize: '12px', margin: '0 0 8px 0', color: '#b45309', fontWeight: 600 }}>Next Recommended Stage:</p>
+                      <button
+                        disabled={isActionLoading}
+                        onClick={() => updateOrderStatus(nextStatus)}
+                        className="create-action-trigger-btn"
+                        style={{ width: '100%', justifyContent: 'center', gap: '8px' }}
+                      >
+                        {isActionLoading ? 'Updating Stage...' : `Advance to ${ORDER_STATUS_LABELS[nextStatus]} →`}
+                      </button>
+                    </div>
+                  )}
+
+                  <label className="internal-notes-field">
+                    <span>Internal Log Note</span>
+                    <textarea
+                      rows={2}
+                      placeholder="Provide logistics tracking number or notes..."
+                      value={statusUpdateNote}
+                      onChange={(e) => setStatusUpdateNote(e.target.value)}
+                    />
+                  </label>
+
+                  <div style={{ marginTop: '16px' }}>
+                    <p style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888', fontWeight: 600, marginBottom: '8px' }}>Or Jump to Status:</p>
+                    <div className="status-timeline-actions">
+                      {ORDER_STATUSES.map(st => (
+                        <button
+                          key={st}
+                          disabled={st === selectedOrder.status || isActionLoading}
+                          onClick={() => updateOrderStatus(st)}
+                          className={`status-workflow-btn ${selectedOrder.status === st ? 'active' : ''}`}
+                        >
+                          {ORDER_STATUS_LABELS[st]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Toast Notification */}
       {toast.show && (
