@@ -62,3 +62,7 @@ export async function PUT(request, { params }) {
     return handleApiError(err);
   }
 }
+
+export async function PATCH(request, context) {
+  return PUT(request, context);
+}
