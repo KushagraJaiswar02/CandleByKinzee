@@ -8,6 +8,7 @@ import { categories } from '@/lib/data.js';
 import { useIsMobile } from '@/hooks.js';
 import { MobileFooter } from './MobileFooter.jsx';
 import { CustomerAuthSheet } from './CustomerAuthSheet.jsx';
+import { PersistentCartBar } from './PersistentCartBar.jsx';
 import { useCart } from './CartContext.jsx';
 
 export function Layout({ children }) {
@@ -261,6 +262,7 @@ export function Layout({ children }) {
           </div>
         </footer>
       )}
+      <PersistentCartBar />
       <CustomerAuthSheet isOpen={authSheetOpen} onClose={() => setAuthSheetOpen(false)} />
     </div>
   );

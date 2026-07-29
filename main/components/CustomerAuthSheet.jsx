@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, ShieldCheck, User, MapPin, Package, Heart, Receipt, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api.js';
 import { FlameButton } from './FlameButton.jsx';
+import { useCart } from './CartContext.jsx';
 
 export function CustomerAuthSheet({ isOpen, onClose }) {
+  const { addToCart } = useCart();
   const [step, setStep] = useState('email-login'); // email-login, otp, profile-setup, dashboard
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -381,9 +383,67 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                                   </div>
                                 ))}
                               </div>
-                              <div className="order-card-footer">
-                                <span>Total Paid: ₹{ord.paymentPlan.total}</span>
-                                <span className="order-date">{new Date(ord.createdAt).toLocaleDateString()}</span>
+                              <div className="order-card-footer" style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: 600 }}>Total Paid: ₹{ord.paymentPlan?.total || 0}</span>
+                                  <span className="order-date" style={{ fontSize: '11px', color: '#64748b' }}>{new Date(ord.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <a 
+                                    href={`/track?order=${ord.orderNumber}`}
+                                    onClick={onClose}
+                                    style={{
+                                      flex: 1,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '4px',
+                                      padding: '6px 12px',
+                                      fontSize: '11px',
+                                      fontWeight: 600,
+                                      color: '#0f172a',
+                                      background: '#f8fafc',
+                                      border: '1px solid #cbd5e1',
+                                      borderRadius: '6px',
+                                      textDecoration: 'none'
+                                    }}
+                                  >
+                                    Track Order ↗
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      ord.items.forEach(item => {
+                                        addToCart({
+                                          productId: item.productId || item._id,
+                                          name: item.name,
+                                          basePrice: item.priceAtOrder || item.basePrice || 0,
+                                          qty: item.qty || 1,
+                                          image: item.image,
+                                          selectedOptions: item.selectedOptions || {}
+                                        });
+                                      });
+                                      onClose();
+                                    }}
+                                    style={{
+                                      flex: 1,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '4px',
+                                      padding: '6px 12px',
+                                      fontSize: '11px',
+                                      fontWeight: 600,
+                                      color: '#ffffff',
+                                      background: '#b58a3c',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Reorder Candles 🛍️
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))

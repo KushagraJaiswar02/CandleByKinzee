@@ -222,6 +222,20 @@ export default function ProductDetail() {
             {product.longDescription}
           </p>
 
+          {/* Studio Fragrance Profile Notes */}
+          {product.fragranceNotes && (
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px 16px', margin: '16px 0' }}>
+              <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', color: '#64748b', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+                🌿 Studio Fragrance Profile
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#0f172a' }}>
+                <div><span style={{ color: '#b58a3c', fontWeight: 600 }}>Top Note:</span> {product.fragranceNotes.top}</div>
+                <div><span style={{ color: '#b58a3c', fontWeight: 600 }}>Heart Note:</span> {product.fragranceNotes.heart}</div>
+                <div><span style={{ color: '#b58a3c', fontWeight: 600 }}>Base Note:</span> {product.fragranceNotes.base}</div>
+              </div>
+            </div>
+          )}
+
           <div className="product-handcrafted-story-badge">
             <span className="badge-text">Every Kinzee candle is poured by hand after you choose it.</span>
             <Link href="/story" className="badge-learn-more-link">
@@ -289,6 +303,16 @@ export default function ProductDetail() {
             </div>
 
             <div className="product-secondary-actions-row">
+              <a
+                href={`https://wa.me/917000701579?text=${encodeURIComponent(`Hi Kinzee Studio! I want to order ${product.name} (Qty: ${qty}, Options: ${Object.entries(options).map(([k, v]) => `${k}: ${v}`).join(', ')}). Please guide me with payment and delivery!`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="product-action-link-btn"
+                style={{ background: '#ecfdf5', color: '#065f46', borderColor: '#a7f3d0' }}
+              >
+                <MessageCircle size={14} />
+                <span>Order via WhatsApp</span>
+              </a>
               <button
                 type="button"
                 onClick={buyNow}
