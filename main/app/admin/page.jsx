@@ -1160,21 +1160,6 @@ export default function Admin() {
                     </div>
                   )}
 
-                  {/* Internal Log Note Input */}
-                  <div className="om-card">
-                    <div className="om-card-header">
-                      <MessageSquare size={14} /> Internal Logistics Log Note
-                    </div>
-                    <label className="form-field">
-                      <textarea
-                        rows={2}
-                        placeholder="e.g. Courier Tracking ID: DTDC8492019, dispatched via INDORE STUDIO..."
-                        value={statusUpdateNote}
-                        onChange={(e) => setStatusUpdateNote(e.target.value)}
-                      />
-                    </label>
-                  </div>
-
                   {/* Status History Audit Trail */}
                   <div className="om-card">
                     <div className="om-card-header">
