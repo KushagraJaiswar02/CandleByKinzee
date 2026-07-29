@@ -10,6 +10,7 @@ import { FlameButton } from '@/components/FlameButton.jsx';
 import { useProducts, useIsMobile } from '@/hooks.js';
 import { StudioContactCard } from '@/components/StudioContactCard.jsx';
 import { useCart } from '@/components/CartContext.jsx';
+import { api } from '@/lib/api.js';
 
 export default function ProductDetail() {
   const params = useParams();
