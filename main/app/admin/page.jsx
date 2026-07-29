@@ -29,7 +29,18 @@ import {
   Filter,
   ShoppingBag,
   DollarSign,
-  Sparkles
+  Sparkles,
+  User,
+  Phone,
+  MapPin,
+  CreditCard,
+  Calendar,
+  Clock,
+  ArrowRight,
+  MessageSquare,
+  Send,
+  Truck,
+  CheckCircle2
 } from 'lucide-react';
 import { api } from '@/lib/api.js';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -962,17 +973,30 @@ export default function Admin() {
 
         return (
           <div className="details-overlay-container">
-            <div className="details-modal-box animate-scale-up">
+            <div className="details-modal-box animate-scale-up" style={{ maxWidth: '960px' }}>
               <button className="details-modal-close-btn" onClick={() => setSelectedOrder(null)}><X size={18}/></button>
+
+              {/* Modal Header */}
               <div className="modal-header-section" style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '16px', marginBottom: '20px' }}>
-                <span className={`badge-pill ${selectedOrder.status}`}>{ORDER_STATUS_LABELS[selectedOrder.status] || selectedOrder.status}</span>
-                <h2 style={{ margin: '8px 0 4px 0', fontSize: '1.4rem' }}>Order #{selectedOrder.orderNumber}</h2>
-                <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Placed on {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '40px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700 }}>Order #{selectedOrder.orderNumber}</h2>
+                      <span className={`badge-pill ${selectedOrder.status}`}>{ORDER_STATUS_LABELS[selectedOrder.status] || selectedOrder.status}</span>
+                    </div>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+                      Placed on {new Date(selectedOrder.createdAt).toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Fulfilment Pipeline Stepper */}
-              <div className="modal-pipeline-stepper" style={{ margin: '16px 0 24px 0', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748b', fontWeight: 600, marginBottom: '12px' }}>Fulfillment Pipeline</p>
+              <div className="modal-pipeline-stepper" style={{ margin: '0 0 24px 0', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', color: '#64748b', fontWeight: 700 }}>Fulfillment Pipeline</span>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#b58a3c' }}>Stage {currentIdx >= 0 ? currentIdx + 1 : 1} of 8</span>
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', overflowX: 'auto', paddingBottom: '4px' }}>
                   {PIPELINE.map((st, idx) => {
                     const isDone = currentIdx >= 0 && idx < currentIdx;
@@ -1022,58 +1046,165 @@ export default function Admin() {
                 </div>
               </div>
 
+              {/* Modal Grid Content */}
               <div className="modal-grid-content" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                
+                {/* Left Column: Customer, Payment & Items */}
                 <div>
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase', color: '#64748b' }}>Shipping Details</h4>
-                    <p style={{ margin: '0 0 4px 0', fontSize: '13px' }}><strong>Customer:</strong> {selectedOrder.customer.name}</p>
-                    <p style={{ margin: '0 0 4px 0', fontSize: '13px' }}><strong>Address:</strong> {selectedOrder.customer.address}</p>
-                    <p style={{ margin: 0, fontSize: '13px' }}><strong>Phone:</strong> {selectedOrder.customer.phone}</p>
+                  
+                  {/* Customer & Shipping Card */}
+                  <div className="om-card">
+                    <div className="om-card-header">
+                      <User size={14} /> Shipping & Client Details
+                    </div>
+                    <div className="om-info-row">
+                      <User size={14} className="om-info-icon" />
+                      <div>
+                        <strong>{selectedOrder.customer.name}</strong>
+                      </div>
+                    </div>
+                    <div className="om-info-row">
+                      <Phone size={14} className="om-info-icon" />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>{selectedOrder.customer.phone}</span>
+                        <a 
+                          href={`https://wa.me/91${selectedOrder.customer.phone.replace(/[^0-9]/g, '')}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          style={{ fontSize: '11px', color: '#10b981', fontWeight: 600, textDecoration: 'none', background: '#ecfdf5', padding: '2px 8px', borderRadius: '100px', border: '1px solid #d1fae5', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                        >
+                          <MessageSquare size={10} /> WhatsApp Chat ↗
+                        </a>
+                      </div>
+                    </div>
+                    <div className="om-info-row">
+                      <MapPin size={14} className="om-info-icon" />
+                      <span>{selectedOrder.customer.address} (Pincode: {selectedOrder.customer.pincode})</span>
+                    </div>
                   </div>
 
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase', color: '#64748b' }}>Purchased Items</h4>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                      {selectedOrder.items.map((item, idx) => (
-                        <li key={item._lineId || idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px dashed #e2e8f0', fontSize: '13px' }}>
-                          <span><strong>{item.name}</strong> &times;{item.qty}</span>
-                          <span>₹{item.priceAtOrder * item.qty}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  {/* Payment & Breakdown Card */}
+                  <div className="om-card">
+                    <div className="om-card-header">
+                      <CreditCard size={14} /> Payment & Billing Breakdown
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
+                      <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                        <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Total Order</span>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>₹{selectedOrder.paymentPlan?.total?.toLocaleString('en-IN') || 0}</div>
+                      </div>
+                      <div style={{ background: '#ecfdf5', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1fae5' }}>
+                        <span style={{ fontSize: '11px', color: '#065f46', textTransform: 'uppercase', fontWeight: 600 }}>Advance Received</span>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#065f46' }}>₹{selectedOrder.paymentPlan?.advanceAmount?.toLocaleString('en-IN') || 0}</div>
+                      </div>
+                    </div>
+                    {selectedOrder.paymentPlan?.balanceAmount > 0 && (
+                      <div style={{ marginTop: '10px', background: '#fffbeb', padding: '8px 12px', borderRadius: '8px', border: '1px solid #fef3c7', fontSize: '12px', color: '#b45309', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Balance Due on Delivery:</span>
+                        <strong>₹{selectedOrder.paymentPlan.balanceAmount.toLocaleString('en-IN')}</strong>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Purchased Items List */}
+                  <div className="om-card">
+                    <div className="om-card-header">
+                      <ShoppingBag size={14} /> Order Items ({selectedOrder.items?.length || 0})
+                    </div>
+                    <div>
+                      {selectedOrder.items.map((item, idx) => (
+                        <div key={item._lineId || idx} className="om-item-row">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <img 
+                              src={item.image || 'https://images.unsplash.com/photo-1602874801007-bd458bb1b8b6?auto=format&fit=crop&w=60&q=70'} 
+                              alt={item.name} 
+                              className="om-item-thumb" 
+                            />
+                            <div>
+                              <strong style={{ fontSize: '13px', display: 'block', color: '#0f172a' }}>{item.name}</strong>
+                              {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
+                                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                  {Object.entries(item.selectedOptions).map(([k, v]) => `${k}: ${v}`).join(' | ')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: '12px', color: '#64748b', marginRight: '8px' }}>&times;{item.qty}</span>
+                            <strong style={{ fontSize: '13px', color: '#0f172a' }}>₹{(item.priceAtOrder * item.qty).toLocaleString('en-IN')}</strong>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                 </div>
 
+                {/* Right Column: Workflow & Audit Timeline */}
                 <div>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', textTransform: 'uppercase', color: '#64748b' }}>Update Status Workflow</h4>
-
-                  {/* Primary Next Action Stepper */}
+                  
+                  {/* Primary Next Stage Action Card */}
                   {nextStatus && (
-                    <div style={{ marginBottom: '16px', padding: '14px', background: '#fef7eb', border: '1px solid #fef3c7', borderRadius: '10px' }}>
-                      <p style={{ fontSize: '12px', margin: '0 0 8px 0', color: '#b45309', fontWeight: 600 }}>Next Recommended Stage:</p>
+                    <div className="om-card" style={{ background: '#fef7eb', borderColor: '#fef3c7' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#b45309', marginBottom: '8px' }}>
+                        <Sparkles size={14}/> Next Recommended Stage
+                      </div>
                       <button
                         disabled={isActionLoading}
                         onClick={() => updateOrderStatus(nextStatus)}
                         className="top-quick-action-btn"
-                        style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
+                        style={{ width: '100%', justifyContent: 'center', padding: '10px 14px', fontSize: '13px' }}
                       >
                         {isActionLoading ? 'Updating Stage...' : `Advance to ${ORDER_STATUS_LABELS[nextStatus]} →`}
                       </button>
                     </div>
                   )}
 
-                  <label className="form-field">
-                    <span>Internal Log Note</span>
-                    <textarea
-                      rows={2}
-                      placeholder="Provide logistics tracking number or notes..."
-                      value={statusUpdateNote}
-                      onChange={(e) => setStatusUpdateNote(e.target.value)}
-                    />
-                  </label>
+                  {/* Internal Log Note Input */}
+                  <div className="om-card">
+                    <div className="om-card-header">
+                      <MessageSquare size={14} /> Internal Logistics Log Note
+                    </div>
+                    <label className="form-field">
+                      <textarea
+                        rows={2}
+                        placeholder="e.g. Courier Tracking ID: DTDC8492019, dispatched via INDORE STUDIO..."
+                        value={statusUpdateNote}
+                        onChange={(e) => setStatusUpdateNote(e.target.value)}
+                      />
+                    </label>
+                  </div>
 
-                  <div style={{ marginTop: '16px' }}>
-                    <p style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '8px' }}>Or Jump to Status:</p>
+                  {/* Status History Audit Trail */}
+                  <div className="om-card">
+                    <div className="om-card-header">
+                      <Clock size={14} /> Status History & Audit Log
+                    </div>
+                    {selectedOrder.statusHistory && selectedOrder.statusHistory.length > 0 ? (
+                      <div className="om-history-timeline">
+                        {selectedOrder.statusHistory.slice().reverse().map((h, i) => (
+                          <div key={i} className="om-history-item">
+                            <div className="om-history-dot" />
+                            <div>
+                              <span className="om-history-status">{ORDER_STATUS_LABELS[h.status] || h.status}</span>
+                              <span className="om-history-time">
+                                {new Date(h.timestamp).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            {h.note && <div className="om-history-note">&ldquo;{h.note}&rdquo;</div>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>No status history recorded yet.</p>
+                    )}
+                  </div>
+
+                  {/* Manual Status Override */}
+                  <div className="om-card">
+                    <div className="om-card-header">
+                      <Filter size={14} /> Manual Status Jump Override
+                    </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                       {ORDER_STATUSES.map(st => (
                         <button
@@ -1083,7 +1214,9 @@ export default function Admin() {
                           className="table-action-btn"
                           style={{
                             background: selectedOrder.status === st ? '#b58a3c' : '#0f172a',
-                            opacity: st === selectedOrder.status ? 0.5 : 1
+                            opacity: st === selectedOrder.status ? 0.5 : 1,
+                            fontSize: '10px',
+                            padding: '4px 8px'
                           }}
                         >
                           {ORDER_STATUS_LABELS[st]}
@@ -1093,6 +1226,7 @@ export default function Admin() {
                   </div>
 
                 </div>
+
               </div>
             </div>
           </div>

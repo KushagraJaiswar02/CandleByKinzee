@@ -881,3 +881,116 @@ body {
     display: none;
   }
 }
+
+/* ==========================================================================
+   Order Details Modal Overhaul (Enterprise Style)
+   ========================================================================== */
+.om-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.om-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #64748b;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.om-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.om-info-row:last-child {
+  margin-bottom: 0;
+}
+
+.om-info-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.om-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.om-item-row:last-child {
+  border-bottom: none;
+}
+
+.om-item-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.om-history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+  padding-left: 14px;
+  border-left: 2px solid #e2e8f0;
+}
+
+.om-history-item {
+  position: relative;
+  font-size: 12px;
+}
+
+.om-history-dot {
+  position: absolute;
+  left: -19px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  box-shadow: 0 0 0 3px #ffffff;
+}
+
+.om-history-status {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.om-history-time {
+  font-size: 11px;
+  color: #64748b;
+  margin-left: 6px;
+}
+
+.om-history-note {
+  font-size: 11px;
+  color: #475569;
+  font-style: italic;
+  margin-top: 2px;
+  background: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
