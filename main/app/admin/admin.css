@@ -732,10 +732,20 @@ body {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  width: 100%;
+  max-width: 100%;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 0;
 }
 
 table {
   width: 100%;
+  min-width: 650px;
   border-collapse: collapse;
   text-align: left;
 }
@@ -1339,6 +1349,20 @@ tr:last-child td {
   
   .header-search-wrap {
     display: none;
+  }
+
+  .details-overlay-container {
+    padding: 12px;
+  }
+  
+  .details-modal-box {
+    padding: 20px 14px;
+    max-height: 92vh;
+    border-radius: 12px;
+  }
+  
+  th, td {
+    padding: 10px 12px;
   }
 }
 
