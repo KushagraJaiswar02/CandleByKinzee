@@ -18,8 +18,19 @@ export default function ProductDetail() {
   const isMobile = useIsMobile();
   const router = useRouter();
 
+  const [directProduct, setDirectProduct] = useState(null);
+  const [loadingDirect, setLoadingDirect] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    api.get(`/products/${id}`)
+      .then((res) => setDirectProduct(res.data.product || null))
+      .catch(() => setDirectProduct(null))
+      .finally(() => setLoadingDirect(false));
+  }, [id]);
+
   const product = useMemo(() => {
-    const raw = products.find((item) => item._id === id);
+    const raw = directProduct || products.find((item) => item._id === id);
     if (!raw) return null;
 
     return {
@@ -44,7 +55,7 @@ export default function ProductDetail() {
         { label: 'Scent', choices: ['Warm Peony', 'Vanilla Sugar', 'Wild Lavender'] }
       ]
     };
-  }, [id, products]);
+  }, [id, products, directProduct]);
 
   const [qty, setQty] = useState(1);
   const [options, setOptions] = useState({});
@@ -56,11 +67,16 @@ export default function ProductDetail() {
   const [bagToast, setBagToast] = useState(false);
 
   const { addToCart } = useCart();
-  const selectedSurcharge = Object.entries(options).reduce((total, [label, choice]) => {
-    const option = product.customOptions?.find((item) => item.label === label);
-    return total + Number(option?.surcharges?.[choice] || 0);
-  }, 0);
-  const unitPrice = product.basePrice + selectedSurcharge;
+
+  const selectedSurcharge = useMemo(() => {
+    if (!product) return 0;
+    return Object.entries(options).reduce((total, [label, choice]) => {
+      const option = product.customOptions?.find((item) => item.label === label);
+      return total + Number(option?.surcharges?.[choice] || 0);
+    }, 0);
+  }, [product, options]);
+
+  const unitPrice = product ? (product.basePrice + selectedSurcharge) : 0;
 
   useEffect(() => {
     if (product && product.customOptions) {
@@ -82,6 +98,18 @@ export default function ProductDetail() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isMobile]);
+
+  if (loadingDirect && products.length === 0) {
+    return (
+      <Layout>
+        <div style={{ padding: '80px 20px', textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="skeleton-pulse" style={{ width: '120px', height: '24px', borderRadius: '100px', marginBottom: '16px' }} />
+          <div className="skeleton-pulse" style={{ width: '280px', height: '36px', borderRadius: '8px', marginBottom: '24px' }} />
+          <div className="skeleton-pulse" style={{ width: '100%', maxWidth: '500px', height: '300px', borderRadius: '16px' }} />
+        </div>
+      </Layout>
+    );
+  }
 
   if (!product) {
     return (

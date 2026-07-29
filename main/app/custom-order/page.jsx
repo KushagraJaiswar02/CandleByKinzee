@@ -9,6 +9,7 @@ import { api } from '@/lib/api.js';
 
 export default function QuoteRequest() {
   const [customer, setCustomer] = useState({ name: '', phone: '', email: '' });
+  const [loggedInCustomer, setLoggedInCustomer] = useState(null);
   const [visionText, setVisionText] = useState('');
   const [timeline, setTimeline] = useState('');
   
@@ -19,6 +20,25 @@ export default function QuoteRequest() {
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  React.useEffect(() => {
+    async function checkCustomer() {
+      try {
+        const res = await api.get('/customer-auth/me');
+        if (res.data?.customer) {
+          setLoggedInCustomer(res.data.customer);
+          setCustomer({
+            name: res.data.customer.name || '',
+            phone: res.data.customer.phone || '',
+            email: res.data.customer.email || '',
+          });
+        }
+      } catch {
+        // Not logged in as customer
+      }
+    }
+    checkCustomer();
+  }, []);
 
   const handleFiles = (filesList) => {
     const validFiles = Array.from(filesList).filter(
@@ -134,17 +154,32 @@ ${visionText}
                   We will contact you shortly through WhatsApp.
                 </p>
                 
-                <div className="success-auth-invite">
-                  <h4>Want to keep everything in one place?</h4>
-                  <p>Create your free Kinzee account in under 10 seconds to track status, view custom requests, and store addresses.</p>
-                  <button 
-                    type="button" 
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-customer-auth', { detail: { phone: customer.phone } }))}
-                    className="success-invite-auth-btn"
-                  >
-                    Continue with Phone Number
-                  </button>
-                </div>
+                {loggedInCustomer ? (
+                  <div className="success-auth-invite" style={{ background: '#ecfdf5', borderColor: '#a7f3d0' }}>
+                    <h4 style={{ color: '#065f46' }}>Linked to Your Account ({loggedInCustomer.name || loggedInCustomer.email}) ✨</h4>
+                    <p style={{ color: '#047857' }}>This custom request is saved to your profile. You can view its status and updates anytime in your dashboard.</p>
+                    <button 
+                      type="button" 
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-customer-auth'))}
+                      className="success-invite-auth-btn"
+                      style={{ background: '#059669', color: '#ffffff' }}
+                    >
+                      View My Custom Requests 👤
+                    </button>
+                  </div>
+                ) : (
+                  <div className="success-auth-invite">
+                    <h4>Want to keep everything in one place?</h4>
+                    <p>Create your free Kinzee account in under 10 seconds to track status, view custom requests, and store addresses.</p>
+                    <button 
+                      type="button" 
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-customer-auth', { detail: { phone: customer.phone } }))}
+                      className="success-invite-auth-btn"
+                    >
+                      Continue with Phone Number
+                    </button>
+                  </div>
+                )}
 
                 <button 
                   type="button" 

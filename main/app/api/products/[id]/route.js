@@ -20,10 +20,17 @@ const productSchema = z.object({
   isActive: z.boolean().default(true)
 });
 
+import mongoose from 'mongoose';
+
 export async function GET(request, { params }) {
   try {
     await connectDB();
     const { id } = await params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+    }
+
     const product = await Product.findOne({ _id: id, isActive: true });
     if (!product) {
       return NextResponse.json({ message: 'Product not found' }, { status: 404 });
@@ -31,6 +38,9 @@ export async function GET(request, { params }) {
     return NextResponse.json({ product });
 
   } catch (err) {
+    if (err.name === 'CastError') {
+      return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+    }
     console.error(err);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }

@@ -91,6 +91,12 @@ export default function Admin() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [statusUpdateNote, setStatusUpdateNote] = useState('');
   
+  // Custom Quote Management state
+  const [selectedQuote, setSelectedQuote] = useState(null);
+  const [quotePriceInput, setQuotePriceInput] = useState('');
+  const [quoteStatusInput, setQuoteStatusInput] = useState('quoted');
+  const [quoteCommentInput, setQuoteCommentInput] = useState('');
+  
   // Navigation & Search State
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'orders' | 'quotes' | 'catalog' | 'discounts'
   const [searchQuery, setSearchQuery] = useState('');
@@ -827,8 +833,9 @@ export default function Admin() {
                           <th>Customer</th>
                           <th>Contact Details</th>
                           <th>Status</th>
-                          <th>Target Date</th>
+                          <th>Quoted Price</th>
                           <th>Description</th>
+                          <th>Action</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -840,15 +847,28 @@ export default function Admin() {
                               <div style={{ fontSize: '11px', color: '#64748b' }}>{q.customer.email}</div>
                             </td>
                             <td><span className={`badge-pill quote-${q.status}`}>{q.status}</span></td>
-                            <td>{q.timeline || 'Flexible'}</td>
-                            <td style={{ maxWidth: '280px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <td><strong>{q.quotedPrice ? `₹${q.quotedPrice.toLocaleString('en-IN')}` : 'Not Quoted Yet'}</strong></td>
+                            <td style={{ maxWidth: '240px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {q.description}
+                            </td>
+                            <td>
+                              <button
+                                className="table-action-btn"
+                                onClick={() => {
+                                  setSelectedQuote(q);
+                                  setQuotePriceInput(q.quotedPrice || '');
+                                  setQuoteStatusInput(q.status || 'quoted');
+                                  setQuoteCommentInput('');
+                                }}
+                              >
+                                Review & Quote 📝
+                              </button>
                             </td>
                           </tr>
                         ))}
                         {filteredQuotes.length === 0 && (
                           <tr>
-                            <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>
+                            <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>
                               No custom quote inquiries found.
                             </td>
                           </tr>
@@ -949,11 +969,6 @@ export default function Admin() {
           )}
 
         </main>
-      </div>
-
-      {/* Floating Razorpay Help & Support Button */}
-      <div className="floating-help-widget">
-        <HelpCircle size={16} /> Atelier Studio Support
       </div>
 
       {/* OVERLAY MODAL: ORDER DETAILS */}
@@ -1217,6 +1232,137 @@ export default function Admin() {
           </div>
         );
       })()}
+
+      {/* Custom Quote Review & Pricing Overlay */}
+      {selectedQuote && (
+        <div className="details-overlay-container">
+          <div className="details-modal-box animate-scale-up" style={{ maxWidth: '800px' }}>
+            <button className="details-modal-close-btn" onClick={() => setSelectedQuote(null)}><X size={18}/></button>
+
+            <div className="modal-header-section" style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '16px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>Bespoke Quote Review</h2>
+                <span className={`badge-pill quote-${selectedQuote.status}`}>{selectedQuote.status}</span>
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+                Submitted on {new Date(selectedQuote.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              
+              {/* Left Column: Brief Details */}
+              <div>
+                <div className="om-card">
+                  <div className="om-card-header">
+                    <User size={14} /> Client Contact Details
+                  </div>
+                  <div className="om-info-row">
+                    <strong>{selectedQuote.customer.name}</strong>
+                  </div>
+                  <div className="om-info-row">
+                    <Phone size={14} className="om-info-icon" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{selectedQuote.customer.phone}</span>
+                      <a 
+                        href={`https://wa.me/91${selectedQuote.customer.phone.replace(/[^0-9]/g, '')}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{ fontSize: '11px', color: '#10b981', fontWeight: 600, textDecoration: 'none', background: '#ecfdf5', padding: '2px 8px', borderRadius: '100px', border: '1px solid #d1fae5', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                      >
+                        <MessageSquare size={10} /> WhatsApp Chat ↗
+                      </a>
+                    </div>
+                  </div>
+                  {selectedQuote.customer.email && (
+                    <div className="om-info-row">
+                      <Mail size={14} className="om-info-icon" />
+                      <span>{selectedQuote.customer.email}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="om-card">
+                  <div className="om-card-header">
+                    <Sparkles size={14} /> Creative Vision & Brief
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#0f172a', whiteSpace: 'pre-wrap', lineHeight: 1.5, margin: 0 }}>
+                    {selectedQuote.description}
+                  </p>
+                </div>
+
+                {selectedQuote.referenceImages?.length > 0 && (
+                  <div className="om-card">
+                    <div className="om-card-header">
+                      Inspiration References ({selectedQuote.referenceImages.length})
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                      {selectedQuote.referenceImages.map((img, i) => (
+                        <a key={i} href={img} target="_blank" rel="noreferrer">
+                          <img src={img} alt="Inspiration preview" style={{ width: '100%', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Pricing & Status Update Form */}
+              <div>
+                <form onSubmit={handleUpdateQuote} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px' }}>
+                  <h4 style={{ margin: '0 0 14px 0', fontSize: '12px', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.5px' }}>
+                    Manage Quote Offer
+                  </h4>
+
+                  <label className="form-field">
+                    <span>Quoted Price (₹)</span>
+                    <input 
+                      type="number" 
+                      min="0"
+                      placeholder="e.g. 4500"
+                      value={quotePriceInput}
+                      onChange={(e) => setQuotePriceInput(e.target.value)}
+                    />
+                  </label>
+
+                  <label className="form-field" style={{ marginTop: '12px' }}>
+                    <span>Quote Status</span>
+                    <select
+                      value={quoteStatusInput}
+                      onChange={(e) => setQuoteStatusInput(e.target.value)}
+                    >
+                      <option value="pending">Pending Review</option>
+                      <option value="quoted">Quoted (Offer Sent)</option>
+                      <option value="accepted">Accepted / In Production</option>
+                      <option value="declined">Declined / Closed</option>
+                    </select>
+                  </label>
+
+                  <label className="form-field" style={{ marginTop: '12px' }}>
+                    <span>Internal Log / Studio Comment</span>
+                    <textarea
+                      rows={3}
+                      placeholder="e.g. Sent formal quote via WhatsApp for 100 Rose Soy Jars @ ₹45/pc..."
+                      value={quoteCommentInput}
+                      onChange={(e) => setQuoteCommentInput(e.target.value)}
+                    />
+                  </label>
+
+                  <button
+                    type="submit"
+                    disabled={isActionLoading}
+                    className="top-quick-action-btn"
+                    style={{ width: '100%', justifyContent: 'center', marginTop: '16px', padding: '10px' }}
+                  >
+                    {isActionLoading ? 'Saving Offer...' : 'Save & Update Quote Offer'}
+                  </button>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Product Form Overlay */}
       {showProductForm && (
