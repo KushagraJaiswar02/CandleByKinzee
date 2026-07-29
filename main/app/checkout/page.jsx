@@ -458,11 +458,13 @@ function DeliveryStep({
 }) {
   const hasSaved = customer && customer.savedAddresses && customer.savedAddresses.length > 0;
   const [addressMode, setAddressMode] = useState(hasSaved ? 'saved' : 'manual');
+  const [deliveryError, setDeliveryError] = useState('');
 
   function handleSubmit(e) {
     e.preventDefault();
+    setDeliveryError('');
     if (!delivery.address || !delivery.city || !delivery.pincode || !delivery.phone) {
-      alert('Please fill or select a valid delivery address before proceeding.');
+      setDeliveryError('Please fill or select a valid delivery address before proceeding.');
       return;
     }
     onNext();
@@ -470,6 +472,11 @@ function DeliveryStep({
 
   return (
     <form className="checkout-form-block" onSubmit={handleSubmit}>
+      {deliveryError && (
+        <div style={{ padding: '12px 16px', background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', borderRadius: '8px', fontSize: '13px', marginBottom: '16px' }}>
+          {deliveryError}
+        </div>
+      )}
       <div className="checkout-step-heading-group">
         <p className="eyebrow">Step 2 of 3</p>
         <h2 className="checkout-step-heading">Where should we send it?</h2>

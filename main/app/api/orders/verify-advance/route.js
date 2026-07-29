@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { connectDB } from '@/lib/mongodb.js';
 import { confirmAdvancePayment } from '@/lib/services/orderService.js';
+import { handleApiError } from '@/lib/errorHandler';
 
 export async function POST(request) {
   try {
@@ -23,10 +24,6 @@ export async function POST(request) {
     });
 
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.issues?.[0]?.message || 'Validation failed' }, { status: 422 });
-    }
-    console.error(err);
-    return NextResponse.json({ message: err.message || 'Internal server error' }, { status: err.status || 500 });
+    return handleApiError(err);
   }
 }

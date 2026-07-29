@@ -21,8 +21,8 @@ export function handleApiError(err) {
 
   console.error('[API Error]:', err);
   
-  return NextResponse.json(
-    { message: err.message || 'Internal server error' }, 
-    { status: 500 }
-  );
+  const status = err.status && err.status >= 400 && err.status < 500 ? err.status : 500;
+  const message = status === 500 ? 'An unexpected error occurred. Please try again.' : (err.message || 'Request failed');
+
+  return NextResponse.json({ message }, { status });
 }

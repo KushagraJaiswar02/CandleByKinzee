@@ -99,6 +99,9 @@ export default function Admin() {
 
   // Login error state
   const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
 
   // Form error states
   const [formError, setFormError] = useState('');
@@ -168,26 +171,33 @@ export default function Admin() {
   async function submitLogin(event) {
     event.preventDefault();
     setLoginError('');
+    setIsLoggingIn(true);
     try {
       const response = await api.post('/auth/login', login);
       setAdmin(response.data.admin);
     } catch (err) {
-      setLoginError('Invalid email or password. Please try again.');
+      setLoginError(err.response?.data?.message || 'Invalid email or password. Please try again.');
+    } finally {
+      setIsLoggingIn(false);
     }
   }
 
   async function openOrderDetails(id) {
+    setIsFetchingDetails(true);
     try {
       const res = await api.get(`/orders/admin/${id}`);
       setSelectedOrder(res.data.order);
       setStatusUpdateNote('');
     } catch (err) {
-      console.error(err);
+      showToast('Failed to load order details', 'error');
+    } finally {
+      setIsFetchingDetails(false);
     }
   }
 
   async function updateOrderStatus(newStatus) {
     if (!selectedOrder) return;
+    setIsActionLoading(true);
     try {
       const res = await api.patch(`/orders/admin/${selectedOrder._id}/status`, {
         status: newStatus,
@@ -196,14 +206,18 @@ export default function Admin() {
       setSelectedOrder(res.data.order);
       setStatusUpdateNote('');
       fetchOrders();
+      showToast('Order status updated successfully');
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to update status', 'error');
+    } finally {
+      setIsActionLoading(false);
     }
   }
 
   async function handleAddProduct(e) {
     e.preventDefault();
     setFormError('');
+    setIsActionLoading(true);
     try {
       if (editProductId) {
         await api.patch(`/products/${editProductId}`, newProduct);
@@ -229,6 +243,8 @@ export default function Admin() {
       fetchProducts();
     } catch (err) {
       setFormError('Failed to save product. Please try again.');
+    } finally {
+      setIsActionLoading(false);
     }
   }
 
@@ -269,6 +285,7 @@ export default function Admin() {
   async function handleAddDiscount(e) {
     e.preventDefault();
     setFormError('');
+    setIsActionLoading(true);
     try {
       await api.post('/admin/discounts', newDiscount);
       showToast('Coupon created successfully');
@@ -282,6 +299,8 @@ export default function Admin() {
       fetchDiscounts();
     } catch (err) {
       setFormError('Failed to create coupon. Please try again.');
+    } finally {
+      setIsActionLoading(false);
     }
   }
 
@@ -358,7 +377,9 @@ export default function Admin() {
                 />
               </label>
             </div>
-            <button className="login-submit-btn">Unlock Dashboard →</button>
+            <button disabled={isLoggingIn} className="login-submit-btn">
+              {isLoggingIn ? 'Unlocking Dashboard...' : 'Unlock Dashboard →'}
+            </button>
           </form>
         </div>
       </main>
@@ -698,8 +719,8 @@ export default function Admin() {
                       />
                     </label>
 
-                    <button type="submit" className="form-submit-btn">
-                      {editProductId ? 'Save Product Details' : 'Add Product'}
+                    <button type="submit" disabled={isActionLoading} className="form-submit-btn">
+                      {isActionLoading ? 'Saving Product...' : (editProductId ? 'Save Product Details' : 'Add Product')}
                     </button>
                   </form>
                 </div>
@@ -800,7 +821,9 @@ export default function Admin() {
                       </label>
                     </div>
 
-                    <button type="submit" className="form-submit-btn">Register Discount Code</button>
+                    <button type="submit" disabled={isActionLoading} className="form-submit-btn">
+                      {isActionLoading ? 'Registering...' : 'Register Discount Code'}
+                    </button>
                   </form>
                 </div>
               </div>
@@ -884,7 +907,7 @@ export default function Admin() {
                   {ORDER_STATUSES.map(st => (
                     <button
                       key={st}
-                      disabled={st === selectedOrder.status}
+                      disabled={st === selectedOrder.status || isActionLoading}
                       onClick={() => updateOrderStatus(st)}
                       className={`status-workflow-btn ${selectedOrder.status === st ? 'active' : ''}`}
                     >

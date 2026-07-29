@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { connectDB } from '@/lib/mongodb.js';
 import { validateDiscount } from '@/lib/services/pricingService.js';
 import { rateLimit } from '@/lib/rateLimit.js';
+import { handleApiError } from '@/lib/errorHandler';
 
 export async function POST(request) {
   try {
@@ -26,10 +27,6 @@ export async function POST(request) {
     return NextResponse.json({ code: discount.code, percentage: discount.percentage });
 
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.issues?.[0]?.message || 'Validation failed' }, { status: 422 });
-    }
-    console.error(err);
-    return NextResponse.json({ message: err.message || 'Internal server error' }, { status: err.status || 500 });
+    return handleApiError(err);
   }
 }

@@ -132,15 +132,21 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
   }
 
   async function handleDeleteAddress(id) {
+    setError('');
+    setLoading(true);
     try {
       const res = await api.delete(`/customer-auth/address/${id}`);
       setCustomer(res.data.customer);
     } catch (err) {
-      console.error(err);
+      setError(err.response?.data?.message || 'Failed to delete address');
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleLogout() {
+    setError('');
+    setLoading(true);
     try {
       await api.post('/customer-auth/logout');
       setCustomer(null);
@@ -148,7 +154,9 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
       setOtp('');
       setStep('email-login');
     } catch (err) {
-      console.error(err);
+      setError(err.response?.data?.message || 'Logout failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -535,7 +543,9 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                             </div>
 
                             <div className="address-form-actions">
-                              <button type="submit" className="address-save-submit-btn">Save Address</button>
+                              <button type="submit" disabled={loading} className="address-save-submit-btn">
+                                {loading ? 'Saving Address...' : 'Save Address'}
+                              </button>
                               <button type="button" onClick={() => setShowAddAddress(false)} className="address-cancel-btn">Cancel</button>
                             </div>
                           </form>
@@ -567,17 +577,18 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                             />
                           </label>
 
-                          <button type="submit" className="profile-update-submit-btn">
-                            Update Profile Name
+                          <button type="submit" disabled={loading} className="profile-update-submit-btn">
+                            {loading ? 'Updating Profile...' : 'Update Profile Name'}
                           </button>
                         </form>
 
                         <button 
                           type="button" 
+                          disabled={loading}
                           onClick={handleLogout} 
-                          className="auth-logout-btn"
+                          className="customer-dashboard-logout-btn"
                         >
-                          Logout Account
+                          {loading ? 'Logging out...' : 'Sign Out of Account'}
                         </button>
                       </div>
                     )}

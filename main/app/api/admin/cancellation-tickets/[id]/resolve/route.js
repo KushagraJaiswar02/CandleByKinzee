@@ -60,6 +60,6 @@ export async function POST(request, { params }) {
 
   } catch (err) {
     console.error('[AdminTickets Resolve Error]:', err);
-    return NextResponse.json({ message: err.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

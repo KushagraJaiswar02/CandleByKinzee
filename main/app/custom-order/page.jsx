@@ -18,6 +18,7 @@ export default function QuoteRequest() {
   
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleFiles = (filesList) => {
     const validFiles = Array.from(filesList).filter(
@@ -60,6 +61,7 @@ export default function QuoteRequest() {
   async function submit(event) {
     event.preventDefault();
     setSubmitting(true);
+    setError('');
 
     const finalDescription = `
 [Target Date]: ${timeline || 'Flexible'}
@@ -84,6 +86,7 @@ ${visionText}
       setUploadedImages([]);
     } catch (err) {
       console.error(err);
+      setError(err.response?.data?.message || 'Failed to submit quote request. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -153,7 +156,11 @@ ${visionText}
               </motion.div>
             ) : (
               <form className="quote-minimal-form" onSubmit={submit}>
-                
+                {error && (
+                  <div style={{ padding: '12px 16px', background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', borderRadius: '8px', fontSize: '13px', marginBottom: '16px' }}>
+                    {error}
+                  </div>
+                )}
                 <div className="quote-minimal-section">
                   <h4>01. Contact Information</h4>
                   <div className="quote-minimal-inputs">
