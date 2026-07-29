@@ -47,7 +47,7 @@ export async function POST(request) {
     admin.lockedUntil = undefined;
     await admin.save();
 
-    const token = signToken({ sub: String(admin._id), role: admin.role }, '8h');
+    const token = signToken({ sub: String(admin._id), role: admin.role }, '30d');
     const cookieString = createAuthCookie(token, 'admin');
 
     const response = NextResponse.json({

@@ -8,7 +8,7 @@ function getJwtSecret() {
 }
 
 // ─── Token Creation ──────────────────────────────────────────────────────────
-export function signToken(payload, expiresIn = '8h') {
+export function signToken(payload, expiresIn = '30d') {
   return jwt.sign(payload, getJwtSecret(), { expiresIn });
 }
 
@@ -52,7 +52,7 @@ export function getCustomerFromRequest(request) {
 // ─── Set auth cookie in response ─────────────────────────────────────────────
 export function createAuthCookie(token, role = 'admin') {
   const name = role === 'customer' ? 'kinzee_customer_session' : 'ck_admin';
-  const maxAge = role === 'customer' ? 30 * 24 * 60 * 60 : 8 * 60 * 60; // 30 days for customer, 8 hours for admin
+  const maxAge = 30 * 24 * 60 * 60; // 30 days for both admin and customer session persistence
   return `${name}=${token}; HttpOnly; Path=/; Max-Age=${maxAge}; SameSite=Lax${env.isProduction ? '; Secure' : ''}`;
 }
 
