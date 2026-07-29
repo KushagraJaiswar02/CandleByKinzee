@@ -95,9 +95,9 @@ export default function Bag() {
                         </div>
                         <div className="bag-item-price-block">
                           {item.qty > 1 && (
-                            <span className="bag-item-unit-price">₹{item.basePrice} each</span>
+                            <span className="bag-item-unit-price">₹{item.unitPrice ?? item.basePrice} each</span>
                           )}
-                          <span className="bag-item-line-total">₹{(item.basePrice * item.qty).toLocaleString('en-IN')}</span>
+                          <span className="bag-item-line-total">₹{((item.unitPrice ?? item.basePrice) * item.qty).toLocaleString('en-IN')}</span>
                         </div>
                       </div>
                     </div>
@@ -122,7 +122,7 @@ export default function Bag() {
                         {item.name}
                         {item.qty > 1 && <span className="bag-summary-qty"> ×{item.qty}</span>}
                       </span>
-                      <span className="bag-summary-line-price">₹{(item.basePrice * item.qty).toLocaleString('en-IN')}</span>
+                      <span className="bag-summary-line-price">₹{((item.unitPrice ?? item.basePrice) * item.qty).toLocaleString('en-IN')}</span>
                     </div>
                   ))}
                 </div>
@@ -195,11 +195,10 @@ function EmptyBagState() {
       </div>
 
       <div className="bag-empty-actions">
-        <Link href="/shop">
-          <FlameButton type="button">
+        <Link href="/shop" className="primary-btn">
+          <span aria-hidden="true"><ShoppingBag size={16} /></span>
             Explore Collections
             <ArrowRight size={15} style={{ marginLeft: 8 }} />
-          </FlameButton>
         </Link>
         <Link href="/custom-order" className="bag-empty-custom-link">
           <Sparkles size={14} />

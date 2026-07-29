@@ -17,6 +17,7 @@ export default function Tracking() {
   const [customer, setCustomer] = useState(null);
   const [activeOrders, setActiveOrders] = useState([]);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isConfirming: false });
 
   useEffect(() => {
     checkLoggedInUser();
@@ -125,6 +126,8 @@ export default function Tracking() {
         next: 'Enjoy the slow craft aromas.',
         img: null
       },
+      cancellation_requested: { text: 'Your cancellation request is under review.', next: 'We will process refunds within 5 days if approved.', img: null },
+      cancellation_declined: { text: 'Your cancellation request was declined.', next: 'The order will proceed as planned.', img: null },
       cancelled: {
         text: 'This order cancellation is confirmed.',
         next: 'Refunds or credits will update on your advance statement.',

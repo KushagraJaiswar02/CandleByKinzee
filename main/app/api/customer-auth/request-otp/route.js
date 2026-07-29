@@ -1,3 +1,4 @@
+import { handleApiError } from '@/lib/errorHandler';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -38,10 +39,6 @@ export async function POST(request) {
     });
 
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
-    }
-    console.error('Request OTP failed:', err);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return handleApiError(err);
   }
 }

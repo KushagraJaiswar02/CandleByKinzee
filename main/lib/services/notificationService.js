@@ -40,15 +40,14 @@ export async function sendOrderEmail(order) {
       <p>We are excited to craft your candles. Here is your order confirmation details:</p>
       <div style="background: #fcfcfc; border: 1px solid #ddd; padding: 15px; border-radius: 4px; margin: 15px 0;">
         <p style="margin: 0;"><strong>Order Number:</strong> #${order.orderNumber}</p>
-        <p style="margin: 5px 0 0 0;"><strong>Status:</strong> Awaiting advance payment</p>
+        <p style="margin: 5px 0 0 0;"><strong>Status:</strong> Awaiting payment confirmation</p>
       </div>
       <h3 style="border-bottom: 1px solid #eee; padding-bottom: 8px;">Items Ordered</h3>
       <ul style="padding-left: 20px;">
         ${itemsList}
       </ul>
       <div style="background: #f7f7f7; padding: 12px; border-radius: 4px; margin-top: 15px;">
-        <p style="margin: 0;"><strong>Advance Amount (50%):</strong> ₹${order.paymentPlan.advanceAmount.toLocaleString('en-IN')} (Paid)</p>
-        <p style="margin: 5px 0 0 0;"><strong>Balance Amount:</strong> ₹${order.paymentPlan.balanceAmount.toLocaleString('en-IN')}</p>
+        <p style="margin: 0;"><strong>Amount Paid:</strong> ₹${order.paymentPlan.advanceAmount.toLocaleString('en-IN')}</p>
       </div>
       <p style="margin-top: 20px;">${message}</p>
       <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
@@ -62,15 +61,14 @@ export async function sendOrderEmail(order) {
 export async function sendOrderPaymentReceivedEmail(order) {
   if (!order.customer.email) return { skipped: true };
 
-  const subject = `Advance Payment Confirmed — #${order.orderNumber}`;
+  const subject = `Payment Confirmed — #${order.orderNumber}`;
   const htmlContent = `
     <div style="font-family: sans-serif; padding: 20px; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px;">
       <h2 style="color: #2e7d32;">Payment Confirmed!</h2>
       <p>Hello ${order.customer.name},</p>
-      <p>We have successfully verified your advance payment for order <strong>#${order.orderNumber}</strong>.</p>
+      <p>We have successfully verified your payment for order <strong>#${order.orderNumber}</strong>.</p>
       <div style="background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; padding: 15px; border-radius: 4px; margin: 15px 0;">
         <p style="margin: 0;"><strong>Amount Paid:</strong> ₹${order.paymentPlan.advanceAmount.toLocaleString('en-IN')}</p>
-        <p style="margin: 5px 0 0 0;"><strong>Remaining Balance:</strong> ₹${order.paymentPlan.balanceAmount.toLocaleString('en-IN')}</p>
       </div>
       <p>Our artisans have now begun handcrafting your premium soy candles in our Indore studio. We will update you as soon as they are ready for dispatch.</p>
       <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
@@ -121,8 +119,8 @@ export async function sendOrderCancelledEmail(order) {
 
   const subject = `Order Cancelled — #${order.orderNumber}`;
   const refundLine = order.cancellation?.refundStatus === 'initiated'
-    ? `An advance refund of <strong>₹${order.paymentPlan.advanceAmount.toLocaleString('en-IN')}</strong> has been initiated and will show in your account within 5–7 business days.`
-    : `No advance payment was captured, so no refund is required.`;
+    ? `A full refund of <strong>₹${order.paymentPlan.advanceAmount.toLocaleString('en-IN')}</strong> has been initiated and will show in your account within 5–7 business days.`
+    : `No payment was captured, so no refund is required.`;
 
   const htmlContent = `
     <div style="font-family: sans-serif; padding: 20px; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px;">
@@ -174,4 +172,50 @@ export async function sendOtpEmail(email, code) {
     console.error('Mail platform sendOtpEmail failed:', err);
     throw err;
   }
+}
+
+export async function sendQuoteProposedEmail(quote) {
+  if (!quote.customer.email) return { skipped: true };
+
+  const subject = `Bespoke Quote Proposed — Inquiry #${quote._id.toString().slice(-6).toUpperCase()}`;
+  const htmlContent = `
+    <div style="font-family: sans-serif; padding: 20px; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px;">
+      <h2 style="color: #b58a3c;">Bespoke Price Proposal</h2>
+      <p>Hello ${quote.customer.name},</p>
+      <p>We have reviewed your custom candle brief and proposed a bespoke price quote:</p>
+      <div style="background: #fff8ef; border: 1px solid #e9dcc9; padding: 15px; border-radius: 4px; margin: 15px 0; text-align: center;">
+        <p style="margin: 0; font-size: 14px; color: #666;">Proposed Price</p>
+        <h3 style="margin: 5px 0 0 0; font-size: 28px; color: #111;">₹${quote.quotedPrice.toLocaleString('en-IN')}</h3>
+      </div>
+      <p><strong>Your Request Details:</strong><br/>
+      "${quote.description}"</p>
+      <p>To accept this proposal, chat with us, or pay upfront to confirm your order, please log in to your dashboard here: <a href="${env.clientOrigin}/track" style="color: #b58a3c; text-decoration: underline;">Open Atelier Dashboard</a></p>
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+      <p style="font-size: 11px; color: #888; text-align: center;">Candle by Kinzee Studio · Indore, Madhya Pradesh</p>
+    </div>
+  `;
+
+  return sendMail(quote.customer.email, subject, htmlContent);
+}
+
+export async function sendQuoteAcceptedEmail(quote) {
+  if (!quote.customer.email) return { skipped: true };
+
+  const subject = `Bespoke Quote Accepted — Inquiry #${quote._id.toString().slice(-6).toUpperCase()}`;
+  const htmlContent = `
+    <div style="font-family: sans-serif; padding: 20px; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px;">
+      <h2 style="color: #2e7d32;">Bespoke Order Confirmed!</h2>
+      <p>Hello ${quote.customer.name},</p>
+      <p>Thank you for accepting and paying the custom quote for <strong>Inquiry #${quote._id.toString().slice(-6).toUpperCase()}</strong>.</p>
+      <div style="background: #e8f5e9; border: 1px solid #c8e6c9; padding: 15px; border-radius: 4px; margin: 15px 0; text-align: center;">
+        <p style="margin: 0; font-size: 14px; color: #2e7d32;">Amount Paid</p>
+        <h3 style="margin: 5px 0 0 0; font-size: 28px; color: #2e7d32;">₹${quote.quotedPrice.toLocaleString('en-IN')}</h3>
+      </div>
+      <p>Our artisans will immediately start custom blending and pouring your candles. You can track this active order journey directly inside your track settings.</p>
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+      <p style="font-size: 11px; color: #888; text-align: center;">Candle by Kinzee Studio · Indore, Madhya Pradesh</p>
+    </div>
+  `;
+
+  return sendMail(quote.customer.email, subject, htmlContent);
 }

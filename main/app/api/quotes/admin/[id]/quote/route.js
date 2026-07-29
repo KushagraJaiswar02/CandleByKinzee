@@ -1,3 +1,4 @@
+import { handleApiError } from '@/lib/errorHandler';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { connectDB } from '@/lib/mongodb.js';
@@ -12,7 +13,7 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ message: 'Admin login required' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const parsed = z.object({ quotedPrice: z.number().int().positive() }).parse(body);
 
@@ -25,13 +26,15 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ message: 'Quote request not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ quoteRequest });
-
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
+    try {
+      const { sendQuoteProposedEmail } = await import('@/lib/services/notificationService.js');
+      await sendQuoteProposedEmail(quoteRequest);
+    } catch (mailErr) {
+      console.error('Mail notification failed:', mailErr);
     }
-    console.error(err);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+
+    return NextResponse.json({ quoteRequest });
+  } catch (err) {
+    return handleApiError(err);
   }
 }

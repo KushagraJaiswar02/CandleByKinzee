@@ -16,7 +16,15 @@ const quoteRequestSchema = new mongoose.Schema(
       index: true
     },
     quotedPrice: { type: Number, min: 0 },
-    quotedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' }
+    quotedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
+    comments: [
+      {
+        sender: { type: String, enum: ['admin', 'customer'], required: true },
+        senderName: { type: String, required: true },
+        text: { type: String, required: true, trim: true },
+        timestamp: { type: Date, default: Date.now }
+      }
+    ]
   },
   { timestamps: true }
 );

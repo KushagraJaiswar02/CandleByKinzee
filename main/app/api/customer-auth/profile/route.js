@@ -1,3 +1,4 @@
+import { handleApiError } from '@/lib/errorHandler';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCustomerFromRequest } from '@/lib/auth.js';
@@ -32,10 +33,6 @@ export async function PUT(request) {
     return NextResponse.json({ success: true, customer });
 
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
-    }
-    console.error(err);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return handleApiError(err);
   }
 }

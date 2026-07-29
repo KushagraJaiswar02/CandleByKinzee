@@ -219,9 +219,7 @@ export default function Home() {
                     <p>{item.description}</p>
                     <div className="bestseller-meta">
                       <span className="bestseller-price">{item.price}</span>
-                      <Link href={item.link}>
-                        <button className="bestseller-btn" type="button">Shop</button>
-                      </Link>
+                      <Link href={item.link} className="bestseller-btn">Shop</Link>
                     </div>
                   </div>
                 </div>
@@ -280,9 +278,7 @@ export default function Home() {
                   <p>{box.description}</p>
                   <div className="giftbox-meta">
                     <span className="giftbox-price">{box.price}</span>
-                    <Link href={box.link}>
-                      <button className="giftbox-btn" type="button">Explore Set</button>
-                    </Link>
+                    <Link href={box.link} className="giftbox-btn">Explore Set</Link>
                   </div>
                 </div>
               </div>

@@ -21,10 +21,12 @@ export const ORDER_STATUSES = [
   'ready_for_dispatch',
   'dispatched',
   'delivered',
+  'cancellation_requested',
+  'cancellation_declined',
   'cancelled'
 ];
 
-export const CANCELLABLE_STATUSES = ['pending_payment', 'payment_received', 'order_confirmed'];
+export const CANCELLABLE_STATUSES = ['pending_payment', 'payment_received', 'order_confirmed', 'cancellation_requested'];
 
 export const ORDER_STATUS_LABELS = {
   pending_payment: 'Pending Payment',
@@ -35,5 +37,8 @@ export const ORDER_STATUS_LABELS = {
   ready_for_dispatch: 'Ready for Dispatch',
   dispatched: 'Dispatched',
   delivered: 'Delivered',
+  cancellation_requested: 'Cancellation Requested',
+  cancellation_declined: 'Cancellation Declined',
   cancelled: 'Cancelled'
 };
+

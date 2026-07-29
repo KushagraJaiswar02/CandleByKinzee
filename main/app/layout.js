@@ -1,4 +1,5 @@
 import './globals.css';
+import './ui-refresh.css';
 import { CartProvider } from '@/components/CartContext';
 
 export const metadata = {

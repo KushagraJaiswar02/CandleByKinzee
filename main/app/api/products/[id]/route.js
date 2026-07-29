@@ -1,9 +1,11 @@
+import { handleApiError } from '@/lib/errorHandler';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { connectDB } from '@/lib/mongodb.js';
 import { Product } from '@/lib/models/Product.js';
 import { CATEGORIES } from '@/lib/constants.js';
 import { getAdminFromRequest } from '@/lib/auth.js';
+import { invalidateProductCache } from '@/lib/redis.js';
 
 const productSchema = z.object({
   name: z.string().min(2),
@@ -21,7 +23,7 @@ const productSchema = z.object({
 export async function GET(request, { params }) {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
     const product = await Product.findOne({ _id: id, isActive: true });
     if (!product) {
       return NextResponse.json({ message: 'Product not found' }, { status: 404 });
@@ -42,7 +44,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ message: 'Admin login required' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const parsed = productSchema.partial().parse(body);
 
@@ -50,13 +52,13 @@ export async function PUT(request, { params }) {
     if (!product) {
       return NextResponse.json({ message: 'Product not found' }, { status: 404 });
     }
+
+    // Invalidate product catalog cache strongly
+    await invalidateProductCache();
+
     return NextResponse.json({ product });
 
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
-    }
-    console.error(err);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return handleApiError(err);
   }
 }

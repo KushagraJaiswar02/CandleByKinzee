@@ -11,7 +11,7 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ message: 'Admin login required' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const order = await Order.findById(id);
     if (!order) {
       return NextResponse.json({ message: 'Order not found' }, { status: 404 });

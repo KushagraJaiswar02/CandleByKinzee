@@ -21,21 +21,7 @@ export async function computeCatalogTotal(items, discountCode) {
 
   for (const item of items) {
     let product;
-    if (item.productId.startsWith('6000000000000000000000') || item.productId.startsWith('placeholder-')) {
-      const indexStr = item.productId.includes('-') ? item.productId.split('-')[1] : item.productId.slice(-2);
-      const index = parseInt(indexStr, 10);
-      product = {
-        _id: `6000000000000000000000${index.toString().padStart(2, '0')}`,
-        name: item.name || 'Fallback Product',
-        basePrice: 249 + (isNaN(index) ? 0 : index * 50),
-        customOptions: [
-          { label: 'Color', choices: ['White', 'Blush pink', 'Sky blue'] },
-          { label: 'Scent', choices: ['Vanilla', 'Rose', 'Unscented'] }
-        ]
-      };
-    } else {
-      product = await Product.findOne({ _id: item.productId, isActive: true });
-    }
+    product = await Product.findOne({ _id: item.productId, isActive: true });
     
     if (!product) throw new AppError('Product unavailable', 404);
 
@@ -71,12 +57,11 @@ export async function validateDiscount(code, subtotal) {
 }
 
 export function splitAdvance(total) {
-  const advanceAmount = Math.ceil(total / 2);
   return {
     total,
-    advanceAmount,
-    balanceAmount: total - advanceAmount,
+    advanceAmount: total,
+    balanceAmount: 0,
     advanceStatus: 'pending',
-    balanceStatus: 'pending'
+    balanceStatus: 'paid_online'
   };
 }

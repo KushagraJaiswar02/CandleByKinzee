@@ -46,6 +46,9 @@ export async function createCatalogOrder({ items, customer, deliveryMethod, disc
 export async function acceptQuoteAndCreateOrder({ quoteId, customer, deliveryMethod }) {
   const quote = await QuoteRequest.findOne({ _id: quoteId, status: 'quoted' });
   if (!quote || typeof quote.quotedPrice !== 'number') throw new AppError('Quote is not ready to accept', 422);
+  if (quote.customer.email !== String(customer.email).trim().toLowerCase()) {
+    throw new AppError('You are not authorised to accept this quote', 403);
+  }
 
   const order = await Order.create({
     orderNumber: makeOrderNumber(),
@@ -71,6 +74,7 @@ export async function acceptQuoteAndCreateOrder({ quoteId, customer, deliveryMet
 export async function confirmAdvancePayment({ orderNumber, razorpay_order_id, razorpay_payment_id, razorpay_signature }) {
   const order = await Order.findOne({ orderNumber, 'razorpay.advanceOrderId': razorpay_order_id });
   if (!order) throw new AppError('Order not found', 404);
+  if (order.paymentPlan.advanceStatus === 'paid') return order;
   if (!verifyRazorpaySignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature })) {
     throw new AppError('Invalid payment signature', 400);
   }
@@ -84,15 +88,30 @@ export async function confirmAdvancePayment({ orderNumber, razorpay_order_id, ra
   return order;
 }
 
-export async function trackOrder(orderNumber, phone) {
-  if (!orderNumber || !phone) throw new AppError('Order number and phone are required', 400);
-  const order = await Order.findOne({ orderNumber, 'customer.phone': phone }).select('-customer.email -customer.address');
+export async function trackOrder(orderNumber, phoneOrEmail) {
+  if (!orderNumber || !phoneOrEmail) throw new AppError('Order number and contact details are required', 400);
+  const cleanIdentifier = String(phoneOrEmail).trim().toLowerCase();
+  const order = await Order.findOne({
+    orderNumber,
+    $or: [
+      { 'customer.phone': phoneOrEmail },
+      { 'customer.email': cleanIdentifier }
+    ]
+  }).select('-customer.email -customer.address');
   if (!order) throw new AppError('Order not found', 404);
   return order;
 }
 
-export async function cancelOrder(orderNumber, phone, reason) {
-  const order = await Order.findOne({ orderNumber, 'customer.phone': phone });
+export async function cancelOrder(orderNumber, phoneOrEmail, reason) {
+  if (!orderNumber || !phoneOrEmail) throw new AppError('Order number and contact details are required', 400);
+  const cleanIdentifier = String(phoneOrEmail).trim().toLowerCase();
+  const order = await Order.findOne({
+    orderNumber,
+    $or: [
+      { 'customer.phone': phoneOrEmail },
+      { 'customer.email': cleanIdentifier }
+    ]
+  });
   if (!order) throw new AppError('Order not found', 404);
   if (!CANCELLABLE_STATUSES.includes(order.status)) throw new AppError('Order cannot be cancelled after work has started', 409);
   if (order.status === 'cancelled') return order;

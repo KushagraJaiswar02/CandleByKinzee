@@ -1,3 +1,4 @@
+import { handleApiError } from '@/lib/errorHandler';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
@@ -12,7 +13,7 @@ export async function POST(request) {
     const body = await request.json();
     const { email, password } = z.object({
       email: z.string().email(),
-      password: z.string().min(8)
+      password: z.string().min(6)
     }).parse(body);
 
     // Rate Limit admin login attempts by IP (max 10 attempts per 15 minutes)
@@ -57,10 +58,6 @@ export async function POST(request) {
     return response;
 
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
-    }
-    console.error(err);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return handleApiError(err);
   }
 }

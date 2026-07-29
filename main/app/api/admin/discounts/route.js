@@ -1,3 +1,4 @@
+import { handleApiError } from '@/lib/errorHandler';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { connectDB } from '@/lib/mongodb.js';
@@ -49,10 +50,6 @@ export async function POST(request) {
     return NextResponse.json({ discount }, { status: 201 });
 
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
-    }
-    console.error(err);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return handleApiError(err);
   }
 }

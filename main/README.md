@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Candle by Kinzee Atelier
+
+A bespoke e-commerce platform for handcrafted candles.
+
+## Project Structure
+- \`app/\`: Next.js 14 App Router codebase.
+- \`components/\`: Reusable UI components including LoadingButton and ConfirmDialog.
+- \`lib/\`: Core utilities, Mongoose models, mail queuing, API handlers.
 
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies:
+   \`\`\`bash
+   npm install
+   \`\`\`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. Set up environment variables in \`.env.local\`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Run the development server:
+   \`\`\`bash
+   npm run dev
+   \`\`\`
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Admin Management
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+To reseed the admin credentials (or add a new admin), you can use the seed script provided in the \`scripts/\` or \`scratch/\` directory.
 
-## Learn More
+### How to reseed admin:
+1. Open your terminal.
+2. Ensure you have the \`MONGODB_URI\` in your environment or \`.env.local\`.
+3. Run the seed script:
+   \`\`\`bash
+   node scratch/seed_admin.js
+   \`\`\`
+   *(Note: This uses the existing seed script created in the scratch directory)*
 
-To learn more about Next.js, take a look at the following resources:
+This will reset the admin user to the default credentials provided in the script.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Key Workflows
+- **Ordering**: Catalog products use immediate checkout; Bespoke items generate a quote request.
+- **Cancellation**: Users can request a cancellation from the \`/track\` page. Admins review this in the dashboard, and a result email is automatically sent to the customer upon approval/decline.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Technologies
+- Next.js 14
+- MongoDB (Mongoose)
+- Razorpay for payments
+- Framer Motion for animations

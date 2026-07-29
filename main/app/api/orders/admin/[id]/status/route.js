@@ -13,7 +13,7 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ message: 'Admin login required' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const parsed = z.object({ 
       status: z.enum(ORDER_STATUSES), 
@@ -27,7 +27,7 @@ export async function PATCH(request, { params }) {
 
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
+      return NextResponse.json({ message: err.issues?.[0]?.message || 'Validation failed' }, { status: 422 });
     }
     console.error(err);
     return NextResponse.json({ message: err.message || 'Internal server error' }, { status: err.status || 500 });

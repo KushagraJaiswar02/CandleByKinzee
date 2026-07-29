@@ -17,7 +17,7 @@ export async function POST(request) {
 
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
+      return NextResponse.json({ message: err.issues?.[0]?.message || 'Validation failed' }, { status: 422 });
     }
     console.error(err);
     return NextResponse.json({ message: err.message || 'Internal server error' }, { status: err.status || 500 });

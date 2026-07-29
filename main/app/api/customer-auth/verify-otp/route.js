@@ -1,13 +1,12 @@
+import { handleApiError } from '@/lib/errorHandler';
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { env } from '@/lib/config.js';
 import { connectDB } from '@/lib/mongodb.js';
 import redis from '@/lib/redis.js';
 import { Customer } from '@/lib/models/Customer.js';
 import { Order } from '@/lib/models/Order.js';
 import { QuoteRequest } from '@/lib/models/QuoteRequest.js';
-import { createAuthCookie } from '@/lib/auth.js';
+import { createAuthCookie, signToken } from '@/lib/auth.js';
 import { rateLimit } from '@/lib/rateLimit.js';
 
 export async function POST(request) {
@@ -76,10 +75,9 @@ export async function POST(request) {
     }
 
     // 7. Set session cookie
-    const token = jwt.sign(
+    const token = signToken(
       { sub: String(customer._id), email: customer.email, role: 'customer' }, 
-      env.jwtSecret || 'dev-only-change-me', 
-      { expiresIn: '30d' }
+      '30d'
     );
     
     const cookieString = createAuthCookie(token, 'customer');
@@ -89,10 +87,6 @@ export async function POST(request) {
     return response;
 
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
-    }
-    console.error('Verify OTP failed:', err);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return handleApiError(err);
   }
 }

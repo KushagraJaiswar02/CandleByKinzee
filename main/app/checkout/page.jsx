@@ -1,44 +1,36 @@
 'use client';
 
+import './checkout.css';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Check, 
+  ArrowLeft, 
+  ArrowRight, 
+  ChevronDown, 
+  ChevronUp, 
+  ShoppingBag, 
+  Sparkles, 
+  ShieldCheck, 
+  Truck, 
+  MapPin, 
+  Phone,
+  MessageCircle,
+  Tag,
+  CheckCircle2,
+  Plus
+} from 'lucide-react';
 import { Layout } from '@/components/Layout.jsx';
 import { FlameButton } from '@/components/FlameButton.jsx';
-import { api } from '@/lib/api.js';
 import { useCart } from '@/components/CartContext.jsx';
-import {
-  ArrowRight,
-  ArrowLeft,
-  Check,
-  MessageCircle,
-  Package,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
-  MapPin,
-  User,
-  Phone,
-  Mail,
-  ShoppingBag,
-} from 'lucide-react';
-
-const STEPS = ['contact', 'delivery', 'review'];
-const STEP_LABELS = ['Contact', 'Delivery', 'Review & Pay'];
+import { api } from '@/lib/api.js';
 
 const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '917000701579';
 
 function loadScript(src) {
   return new Promise((resolve) => {
-    if (typeof window === 'undefined') {
-      resolve(false);
-      return;
-    }
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve(true);
-      return;
-    }
     const script = document.createElement('script');
     script.src = src;
     script.onload = () => resolve(true);
@@ -60,6 +52,39 @@ export default function Checkout() {
 
   const [contact, setContact] = useState({ name: '', email: '' });
   const [delivery, setDelivery] = useState({ address: '', pincode: '', city: '', phone: '', method: 'post' });
+
+  // Promo Code States
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoError, setPromoError] = useState('');
+  const [applyingPromo, setApplyingPromo] = useState(false);
+
+  const discountAmount = appliedPromo ? Math.floor(cartTotal * (appliedPromo.percentage / 100)) : 0;
+  const finalTotal = Math.max(0, cartTotal - discountAmount);
+
+  async function handleApplyPromo(codeToApply) {
+    const code = (codeToApply || promoCode).trim();
+    if (!code) return;
+    setApplyingPromo(true);
+    setPromoError('');
+    try {
+      const res = await api.post('/promo/validate', {
+        code: code.toUpperCase(),
+        subtotal: cartTotal
+      });
+      setAppliedPromo(res.data);
+      setPromoCode('');
+    } catch (err) {
+      setPromoError(err.response?.data?.message || 'Invalid promo code');
+    } finally {
+      setApplyingPromo(false);
+    }
+  }
+
+  function handleRemovePromo() {
+    setAppliedPromo(null);
+    setPromoError('');
+  }
 
   useEffect(() => {
     async function checkCustomerSession() {
@@ -109,7 +134,7 @@ export default function Checkout() {
         qty: c.qty,
         selectedOptions: c.selectedOptions,
       }));
-      const customer = {
+      const customerInfo = {
         name: contact.name,
         email: contact.email,
         phone: delivery.phone,
@@ -117,7 +142,12 @@ export default function Checkout() {
         pincode: delivery.pincode,
       };
       
-      const response = await api.post('/orders', { items, customer, deliveryMethod: delivery.method });
+      const response = await api.post('/orders', { 
+        items, 
+        customer: customerInfo, 
+        deliveryMethod: delivery.method,
+        discountCode: appliedPromo?.code
+      });
       const { orderNumber, razorpayOrder, amountDueNow } = response.data;
       
       if (razorpayOrder.id.startsWith('dev_')) {
@@ -127,7 +157,7 @@ export default function Checkout() {
           razorpay_payment_id: `dev_pay_${Date.now()}`,
           razorpay_signature: 'dev_mock_sig'
         });
-        setResult({ order: { orderNumber }, customer, amountDueNow });
+        setResult({ order: { orderNumber }, customer: customerInfo, amountDueNow });
         clearCart();
         return;
       }
@@ -144,7 +174,7 @@ export default function Checkout() {
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         name: "Candle by Kinzee",
-        description: "Order Advance Payment",
+        description: "Order Payment",
         order_id: razorpayOrder.id,
         handler: async function (paymentResponse) {
           try {
@@ -154,16 +184,16 @@ export default function Checkout() {
               razorpay_payment_id: paymentResponse.razorpay_payment_id,
               razorpay_signature: paymentResponse.razorpay_signature
             });
-            setResult({ order: { orderNumber }, customer, amountDueNow });
+            setResult({ order: { orderNumber }, customer: customerInfo, amountDueNow });
             clearCart();
           } catch (err) {
             setError(err.response?.data?.message || 'Payment verification failed. Please contact support.');
           }
         },
         prefill: {
-          name: customer.name,
-          email: customer.email,
-          contact: customer.phone
+          name: customerInfo.name,
+          email: customerInfo.email,
+          contact: customerInfo.phone
         },
         theme: {
           color: "#000000"
@@ -199,18 +229,12 @@ export default function Checkout() {
   if (isEmpty) {
     return (
       <Layout>
-        <div className="checkout-empty-guard">
-          <ShoppingBag size={44} className="checkout-empty-icon" />
+        <div className="checkout-empty-state">
           <h2>Your bag is empty</h2>
-          <p>Add some candles before checking out.</p>
-          <div className="checkout-empty-actions">
-            <FlameButton type="button" onClick={() => router.push('/shop')}>
-              Explore Collections
-            </FlameButton>
-            <button type="button" onClick={() => router.push('/bag')} className="checkout-back-bag-btn">
-              Go to Bag
-            </button>
-          </div>
+          <p>Add some handcrafted candles before proceeding to checkout.</p>
+          <Link href="/shop">
+            <FlameButton>Explore Collection</FlameButton>
+          </Link>
         </div>
       </Layout>
     );
@@ -218,28 +242,22 @@ export default function Checkout() {
 
   return (
     <Layout>
-      <div className="checkout-shell">
-
-        <div className="checkout-steps-column">
-          <div className="checkout-top-meta">
-            <button type="button" onClick={() => router.push('/bag')} className="checkout-back-link">
-              <ArrowLeft size={14} />
-              <span>Back to Bag</span>
-            </button>
-          </div>
-
-          <div className="checkout-step-indicator">
-            {STEPS.map((s, i) => (
-              <React.Fragment key={s}>
-                <div className={`checkout-step-node ${i <= step ? 'is-active' : ''} ${i < step ? 'is-done' : ''}`}>
-                  <div className="checkout-step-circle">
-                    {i < step ? <Check size={12} /> : <span>{i + 1}</span>}
-                  </div>
-                  <span className="checkout-step-label">{STEP_LABELS[i]}</span>
+      <div className="checkout-page-shell">
+        <div className="checkout-main-content">
+          
+          <div className="checkout-steps-indicator">
+            {['Contact', 'Delivery', 'Review & Pay'].map((label, idx) => (
+              <React.Fragment key={label}>
+                <div
+                  className={`checkout-step-tab ${
+                    step === idx ? 'is-active' : step > idx ? 'is-completed' : ''
+                  }`}
+                  onClick={() => idx < step && setStep(idx)}
+                >
+                  <span className="step-num">{step > idx ? <Check size={12} /> : idx + 1}</span>
+                  <span className="step-label">{label}</span>
                 </div>
-                {i < STEPS.length - 1 && (
-                  <div className={`checkout-step-connector ${i < step ? 'is-done' : ''}`} />
-                )}
+                {idx < 2 && <div className="checkout-step-connector" />}
               </React.Fragment>
             ))}
           </div>
@@ -247,14 +265,17 @@ export default function Checkout() {
           <div className="checkout-mobile-summary-toggle">
             <button
               type="button"
+              className="checkout-summary-toggle-btn"
               onClick={() => setSummaryOpen(!summaryOpen)}
-              className="checkout-mobile-summary-btn"
             >
-              <ShoppingBag size={15} />
-              <span>Order Summary ({cart.length} {cart.length === 1 ? 'item' : 'items'})</span>
-              <span className="checkout-mobile-summary-total">₹{cartTotal.toLocaleString('en-IN')}</span>
-              {summaryOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              <div className="toggle-left">
+                <ShoppingBag size={16} />
+                <span>{summaryOpen ? 'Hide Order Summary' : 'Show Order Summary'}</span>
+                {summaryOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </div>
+              <span className="toggle-amount">₹{finalTotal.toLocaleString('en-IN')}</span>
             </button>
+
             <AnimatePresence>
               {summaryOpen && (
                 <motion.div
@@ -264,7 +285,17 @@ export default function Checkout() {
                   transition={{ duration: 0.25 }}
                   className="checkout-mobile-summary-content"
                 >
-                  <OrderSummaryContent cart={cart} cartTotal={cartTotal} />
+                  <OrderSummaryContent
+                    cart={cart}
+                    cartTotal={cartTotal}
+                    appliedPromo={appliedPromo}
+                    handleApplyPromo={handleApplyPromo}
+                    handleRemovePromo={handleRemovePromo}
+                    promoCode={promoCode}
+                    setPromoCode={setPromoCode}
+                    promoError={promoError}
+                    applyingPromo={applyingPromo}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -289,6 +320,13 @@ export default function Checkout() {
                   customer={customer}
                   onNext={goNext}
                   onBack={goBack}
+                  appliedPromo={appliedPromo}
+                  handleApplyPromo={handleApplyPromo}
+                  handleRemovePromo={handleRemovePromo}
+                  promoCode={promoCode}
+                  setPromoCode={setPromoCode}
+                  promoError={promoError}
+                  applyingPromo={applyingPromo}
                 />
               </StepPanel>
             )}
@@ -298,12 +336,19 @@ export default function Checkout() {
                   contact={contact}
                   delivery={delivery}
                   cart={cart}
-                  cartTotal={cartTotal}
+                  cartTotal={finalTotal}
                   onBack={goBack}
                   onPlace={placeOrder}
                   submitting={submitting}
                   error={error}
                   goToStep={setStep}
+                  appliedPromo={appliedPromo}
+                  handleApplyPromo={handleApplyPromo}
+                  handleRemovePromo={handleRemovePromo}
+                  promoCode={promoCode}
+                  setPromoCode={setPromoCode}
+                  promoError={promoError}
+                  applyingPromo={applyingPromo}
                 />
               </StepPanel>
             )}
@@ -313,7 +358,17 @@ export default function Checkout() {
         <aside className="checkout-sidebar">
           <div className="checkout-sidebar-card">
             <h3 className="checkout-sidebar-heading">Order Summary</h3>
-            <OrderSummaryContent cart={cart} cartTotal={cartTotal} />
+            <OrderSummaryContent
+              cart={cart}
+              cartTotal={cartTotal}
+              appliedPromo={appliedPromo}
+              handleApplyPromo={handleApplyPromo}
+              handleRemovePromo={handleRemovePromo}
+              promoCode={promoCode}
+              setPromoCode={setPromoCode}
+              promoError={promoError}
+              applyingPromo={applyingPromo}
+            />
           </div>
         </aside>
 
@@ -325,10 +380,10 @@ export default function Checkout() {
 function StepPanel({ children }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 18 }}
+      initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -18 }}
-      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.25 }}
       className="checkout-step-panel"
     >
       {children}
@@ -346,46 +401,26 @@ function ContactStep({ contact, setContact, customer, onNext }) {
     <form className="checkout-form-block" onSubmit={handleSubmit}>
       <div className="checkout-step-heading-group">
         <p className="eyebrow">Step 1 of 3</p>
-        <h2 className="checkout-step-heading">Who's this for?</h2>
+        <h2 className="checkout-step-heading">Contact Information</h2>
         <p className="checkout-step-subtext">
-          No account needed. We'll send order updates and digital invoice to your email.
+          {customer ? `Welcome back, ${customer.name || 'Friend'}!` : 'Enter your contact details so we can confirm your order updates.'}
         </p>
       </div>
 
-      <div className="checkout-reassurance-chip">
-        {customer ? (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#2e7d32' }}>
-            <Check size={13} />
-            <span>Logged in as <strong>{contact.email}</strong></span>
-          </span>
-        ) : (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Mail size={13} />
-            <span>Guest checkout — no account required</span>
-          </span>
-        )}
-      </div>
-
       <div className="checkout-fields-grid">
-        <label className="checkout-field-label">
-          <span>
-            <User size={13} />
-            Full Name
-          </span>
+        <label className="checkout-field-label checkout-field-full">
+          <span>Full Name</span>
           <input
             type="text"
             required
-            placeholder="Your full name"
+            placeholder="e.g. Eleanor Vance"
             value={contact.name}
             onChange={(e) => setContact({ ...contact, name: e.target.value })}
           />
         </label>
 
-        <label className="checkout-field-label">
-          <span>
-            <Mail size={13} />
-            Email Address
-          </span>
+        <label className="checkout-field-label checkout-field-full">
+          <span>Email Address</span>
           <input
             type="email"
             required
@@ -393,7 +428,7 @@ function ContactStep({ contact, setContact, customer, onNext }) {
             value={contact.email}
             onChange={(e) => setContact({ ...contact, email: e.target.value.toLowerCase() })}
           />
-          <small>We'll send your order confirmation here</small>
+          <small>We'll send your order confirmation and dispatch details here</small>
         </label>
       </div>
 
@@ -407,9 +442,29 @@ function ContactStep({ contact, setContact, customer, onNext }) {
   );
 }
 
-function DeliveryStep({ delivery, setDelivery, customer, onNext, onBack }) {
+function DeliveryStep({ 
+  delivery, 
+  setDelivery, 
+  customer, 
+  onNext, 
+  onBack,
+  appliedPromo,
+  handleApplyPromo,
+  handleRemovePromo,
+  promoCode,
+  setPromoCode,
+  promoError,
+  applyingPromo
+}) {
+  const hasSaved = customer && customer.savedAddresses && customer.savedAddresses.length > 0;
+  const [addressMode, setAddressMode] = useState(hasSaved ? 'saved' : 'manual');
+
   function handleSubmit(e) {
     e.preventDefault();
+    if (!delivery.address || !delivery.city || !delivery.pincode || !delivery.phone) {
+      alert('Please fill or select a valid delivery address before proceeding.');
+      return;
+    }
     onNext();
   }
 
@@ -423,133 +478,246 @@ function DeliveryStep({ delivery, setDelivery, customer, onNext, onBack }) {
         </p>
       </div>
 
-      {customer && customer.savedAddresses && customer.savedAddresses.length > 0 && (
-        <div style={{ marginBottom: '20px' }}>
-          <label className="checkout-field-label">
-            <span>Select Saved Address</span>
-            <select
-              className="checkout-select"
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '6px',
-                border: '1px solid #ddd',
-                backgroundColor: '#fff',
-                fontSize: '14px',
-                color: '#333'
-              }}
-              onChange={(e) => {
-                const idx = parseInt(e.target.value, 10);
-                if (idx >= 0 && idx < customer.savedAddresses.length) {
-                  const addr = customer.savedAddresses[idx];
-                  setDelivery({
-                    ...delivery,
-                    address: addr.street || '',
-                    city: addr.city || '',
-                    pincode: addr.zip || '',
-                    phone: addr.phone || customer.phone || ''
-                  });
-                }
-              }}
-            >
-              {customer.savedAddresses.map((addr, idx) => (
-                <option key={addr._id || idx} value={idx}>
-                  [{addr.label}] {addr.fullName} — {addr.street}, {addr.city} ({addr.zip})
-                </option>
-              ))}
-            </select>
-          </label>
+      {/* ADDRESS MODE SELECTOR TOGGLE BUTTONS */}
+      {hasSaved && (
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setAddressMode('saved');
+              if (customer.savedAddresses[0]) {
+                const addr = customer.savedAddresses[0];
+                setDelivery({
+                  ...delivery,
+                  address: addr.street || '',
+                  city: addr.city || '',
+                  pincode: addr.zip || '',
+                  phone: addr.phone || customer.phone || ''
+                });
+              }
+            }}
+            style={{
+              flex: 1,
+              padding: '12px 14px',
+              borderRadius: '10px',
+              border: addressMode === 'saved' ? '2px solid #b58a3c' : '1px solid #ddd',
+              background: addressMode === 'saved' ? '#fffdfa' : '#fff',
+              color: addressMode === 'saved' ? '#b58a3c' : '#555',
+              fontWeight: 7,
+              fontFamily: 'var(--font-serif)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            <MapPin size={15} /> Select Saved Address ({customer.savedAddresses.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setAddressMode('manual');
+              setDelivery({
+                address: '',
+                city: '',
+                pincode: '',
+                phone: customer?.phone || '',
+                method: delivery.method
+              });
+            }}
+            style={{
+              flex: 1,
+              padding: '12px 14px',
+              borderRadius: '10px',
+              border: addressMode === 'manual' ? '2px solid #b58a3c' : '1px solid #ddd',
+              background: addressMode === 'manual' ? '#fffdfa' : '#fff',
+              color: addressMode === 'manual' ? '#b58a3c' : '#555',
+              fontWeight: 7,
+              fontFamily: 'var(--font-serif)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            <Plus size={15} /> Enter New Address
+          </button>
         </div>
       )}
 
-      <div className="checkout-fields-grid">
-        <label className="checkout-field-label checkout-field-full">
-          <span>
-            <MapPin size={13} />
-            Delivery Address
-          </span>
-          <textarea
-            required
-            rows={3}
-            placeholder="House / flat number, street name, area, landmark..."
-            value={delivery.address}
-            onChange={(e) => setDelivery({ ...delivery, address: e.target.value })}
-            className="checkout-textarea"
-          />
-        </label>
+      {/* MODE 1: SAVED ADDRESS CARDS GRID */}
+      {hasSaved && addressMode === 'saved' && (
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+            {customer.savedAddresses.map((addr, idx) => {
+              const isSelected = delivery.address === (addr.street || '') && delivery.pincode === (addr.zip || '');
+              return (
+                <div
+                  key={addr._id || idx}
+                  onClick={() => {
+                    setDelivery({
+                      ...delivery,
+                      address: addr.street || '',
+                      city: addr.city || '',
+                      pincode: addr.zip || '',
+                      phone: addr.phone || customer.phone || ''
+                    });
+                  }}
+                  style={{
+                    border: isSelected ? '2px solid #b58a3c' : '1px solid #e5e5e5',
+                    background: isSelected ? '#fffdfa' : '#fff',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    position: 'relative',
+                    boxShadow: isSelected ? '0 4px 14px rgba(181,138,60,0.12)' : 'none'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <strong style={{ fontSize: 11, textTransform: 'uppercase', color: '#b58a3c', letterSpacing: '0.5px' }}>
+                      {addr.label || 'Saved Address'}
+                    </strong>
+                    {isSelected && (
+                      <span style={{ fontSize: 10, background: '#2e7d32', color: '#fff', padding: '2px 8px', borderRadius: 4, fontWeight: 7, display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <CheckCircle2 size={10} /> Selected
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 6, color: '#111' }}>{addr.fullName}</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: 12, color: '#555', lineHeight: 1.4 }}>
+                    {addr.street}, {addr.city} ({addr.zip})
+                  </p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: 11, color: '#888' }}>T: {addr.phone}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-        <label className="checkout-field-label">
-          <span>City</span>
-          <input
-            type="text"
-            required
-            placeholder="City"
-            value={delivery.city}
-            onChange={(e) => setDelivery({ ...delivery, city: e.target.value })}
-          />
-        </label>
+      {/* MODE 2: MANUAL FORM INPUTS (Only rendered when addressMode === 'manual' or no saved addresses) */}
+      {(!hasSaved || addressMode === 'manual') && (
+        <div className="checkout-fields-grid">
+          <label className="checkout-field-label checkout-field-full">
+            <span>
+              <MapPin size={13} />
+              Delivery Address
+            </span>
+            <textarea
+              required
+              rows={3}
+              placeholder="House / flat number, street name, area, landmark..."
+              value={delivery.address}
+              onChange={(e) => setDelivery({ ...delivery, address: e.target.value })}
+              className="checkout-textarea"
+            />
+          </label>
 
-        <label className="checkout-field-label">
-          <span>Pincode</span>
-          <input
-            type="text"
-            required
-            maxLength={6}
-            placeholder="6-digit pincode"
-            value={delivery.pincode}
-            onChange={(e) => setDelivery({ ...delivery, pincode: e.target.value })}
-          />
-        </label>
+          <label className="checkout-field-label">
+            <span>City</span>
+            <input
+              type="text"
+              required
+              placeholder="City"
+              value={delivery.city}
+              onChange={(e) => setDelivery({ ...delivery, city: e.target.value })}
+            />
+          </label>
 
-        <label className="checkout-field-label checkout-field-full">
-          <span>
-            <Phone size={13} />
-            Contact Phone Number (For Shipping Partner)
-          </span>
-          <input
-            type="tel"
-            required
-            placeholder="e.g. 9876543210"
-            value={delivery.phone}
-            onChange={(e) => setDelivery({ ...delivery, phone: e.target.value })}
-          />
-          <small>Required by couriers to reach you during delivery</small>
-        </label>
-      </div>
+          <label className="checkout-field-label">
+            <span>Pincode</span>
+            <input
+              type="text"
+              required
+              maxLength={6}
+              placeholder="6-digit pincode"
+              value={delivery.pincode}
+              onChange={(e) => setDelivery({ ...delivery, pincode: e.target.value })}
+            />
+          </label>
+
+          <label className="checkout-field-label checkout-field-full">
+            <span>
+              <Phone size={13} />
+              Contact Phone Number (For Shipping Partner)
+            </span>
+            <input
+              type="tel"
+              required
+              placeholder="e.g. 9876543210"
+              value={delivery.phone}
+              onChange={(e) => setDelivery({ ...delivery, phone: e.target.value })}
+            />
+            <small>Required by couriers to reach you during delivery</small>
+          </label>
+        </div>
+      )}
 
       <div className="checkout-delivery-method-group">
         <p className="checkout-delivery-method-label">Delivery Method</p>
         <div className="checkout-method-cards">
           <button
             type="button"
-            onClick={() => setDelivery({ ...delivery, method: 'post' })}
             className={`checkout-method-card ${delivery.method === 'post' ? 'is-selected' : ''}`}
+            onClick={() => setDelivery({ ...delivery, method: 'post' })}
           >
-            <Package size={18} />
-            <div>
-              <strong>India Post</strong>
-              <span>Standard tracked delivery across India</span>
-            </div>
-            <div className="checkout-method-radio">
-              {delivery.method === 'post' && <Check size={12} />}
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setDelivery({ ...delivery, method: 'personal' })}
-            className={`checkout-method-card ${delivery.method === 'personal' ? 'is-selected' : ''}`}
-          >
-            <MapPin size={18} />
-            <div>
-              <strong>Personal Pickup</strong>
-              <span>Collect from our Indore studio by appointment</span>
-            </div>
-            <div className="checkout-method-radio">
-              {delivery.method === 'personal' && <Check size={12} />}
+            <div className="method-radio">{delivery.method === 'post' && <div className="radio-inner" />}</div>
+            <div className="method-details">
+              <strong>Standard Courier Shipping</strong>
+              <span>Dispatched within 7–10 working days</span>
             </div>
           </button>
         </div>
+      </div>
+
+      {/* PROMO CODE BOX IN STEP 2 */}
+      <div style={{ background: '#fff8ef', border: '1px solid #e9dcc9', padding: '16px', borderRadius: '10px', margin: '24px 0' }}>
+        <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontFamily: 'var(--font-serif)', color: '#b58a3c', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Tag size={13} /> Have a Promo or Coupon Code?
+        </h4>
+        {appliedPromo ? (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#e8f5e9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #c8e6c9' }}>
+            <div>
+              <span style={{ fontSize: 10, color: '#2e7d32', fontWeight: 6, display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Promo Applied ({appliedPromo.percentage}% Off)</span>
+              <strong style={{ fontSize: 14, color: '#1b5e20' }}>{appliedPromo.code}</strong>
+            </div>
+            <button type="button" onClick={handleRemovePromo} style={{ background: 'none', border: 'none', color: '#c62828', fontSize: 12, cursor: 'pointer', fontWeight: 6 }}>
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                placeholder="Enter Code (e.g. ATELIER10)"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                disabled={applyingPromo}
+                style={{ flexGrow: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '13px', textTransform: 'uppercase' }}
+              />
+              <button
+                type="button"
+                onClick={() => handleApplyPromo()}
+                disabled={applyingPromo || !promoCode.trim()}
+                style={{ background: '#111', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: 6 }}
+              >
+                {applyingPromo ? 'Validating...' : 'Apply Code'}
+              </button>
+            </div>
+            {promoError && (
+              <p style={{ color: '#c62828', fontSize: 11, margin: '6px 0 0 0', fontWeight: 5 }}>
+                ❌ {promoError}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="checkout-step-actions">
@@ -566,9 +734,24 @@ function DeliveryStep({ delivery, setDelivery, customer, onNext, onBack }) {
   );
 }
 
-function ReviewStep({ contact, delivery, cart, cartTotal, onBack, onPlace, submitting, error, goToStep }) {
-  const advance = Math.ceil(cartTotal * 0.5);
-
+function ReviewStep({ 
+  contact, 
+  delivery, 
+  cart, 
+  cartTotal, 
+  onBack, 
+  onPlace, 
+  submitting, 
+  error, 
+  goToStep,
+  appliedPromo,
+  handleApplyPromo,
+  handleRemovePromo,
+  promoCode,
+  setPromoCode,
+  promoError,
+  applyingPromo
+}) {
   return (
     <div className="checkout-form-block">
       <div className="checkout-step-heading-group">
@@ -600,7 +783,7 @@ function ReviewStep({ contact, delivery, cart, cartTotal, onBack, onPlace, submi
           <p>{delivery.city} — {delivery.pincode}</p>
           <p>T: {delivery.phone}</p>
           <p className="checkout-review-method">
-            {delivery.method === 'post' ? '📦 India Post' : '🏠 Personal Pickup'}
+            {delivery.method === 'post' ? '📦 Standard Shipping' : '🏠 Personal Pickup'}
           </p>
         </div>
       </div>
@@ -622,19 +805,62 @@ function ReviewStep({ contact, delivery, cart, cartTotal, onBack, onPlace, submi
                 )}
               </div>
               <span className="checkout-review-item-qty">×{item.qty}</span>
-              <span className="checkout-review-item-total">₹{(item.basePrice * item.qty).toLocaleString('en-IN')}</span>
+              <span className="checkout-review-item-total">₹{((item.unitPrice ?? item.basePrice) * item.qty).toLocaleString('en-IN')}</span>
             </div>
           ))}
         </div>
       </div>
 
+      {/* PROMO CODE BOX IN STEP 3 */}
+      <div style={{ background: '#fff8ef', border: '1px solid #e9dcc9', padding: '16px', borderRadius: '10px', margin: '20px 0' }}>
+        <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontFamily: 'var(--font-serif)', color: '#b58a3c', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Tag size={13} /> Have a Promo or Coupon Code?
+        </h4>
+        {appliedPromo ? (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#e8f5e9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #c8e6c9' }}>
+            <div>
+              <span style={{ fontSize: 10, color: '#2e7d32', fontWeight: 6, display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Promo Applied ({appliedPromo.percentage}% Off)</span>
+              <strong style={{ fontSize: 14, color: '#1b5e20' }}>{appliedPromo.code}</strong>
+            </div>
+            <button type="button" onClick={handleRemovePromo} style={{ background: 'none', border: 'none', color: '#c62828', fontSize: 12, cursor: 'pointer', fontWeight: 6 }}>
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                placeholder="Enter Code (e.g. ATELIER10)"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                disabled={applyingPromo}
+                style={{ flexGrow: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '13px', textTransform: 'uppercase' }}
+              />
+              <button
+                type="button"
+                onClick={() => handleApplyPromo()}
+                disabled={applyingPromo || !promoCode.trim()}
+                style={{ background: '#111', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: 6 }}
+              >
+                {applyingPromo ? 'Validating...' : 'Apply Code'}
+              </button>
+            </div>
+            {promoError && (
+              <p style={{ color: '#c62828', fontSize: 11, margin: '6px 0 0 0', fontWeight: 5 }}>
+                ❌ {promoError}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="checkout-advance-info-card">
         <div className="checkout-advance-icon">🕯️</div>
         <div>
-          <strong>50% advance to begin crafting</strong>
+          <strong>Payment required to begin crafting</strong>
           <p>
-            An advance of <strong>₹{advance.toLocaleString('en-IN')}</strong> is required to begin crafting your order.
-            The remaining balance will be collected when your candles are ready.
+            Total Payment of <strong>₹{cartTotal.toLocaleString('en-IN')}</strong> is required to initiate hand-pouring and crafting of your candles.
           </p>
         </div>
       </div>
@@ -655,8 +881,19 @@ function ReviewStep({ contact, delivery, cart, cartTotal, onBack, onPlace, submi
   );
 }
 
-function OrderSummaryContent({ cart, cartTotal }) {
-  const advance = Math.ceil(cartTotal * 0.5);
+function OrderSummaryContent({
+  cart,
+  cartTotal,
+  appliedPromo,
+  handleApplyPromo,
+  handleRemovePromo,
+  promoCode,
+  setPromoCode,
+  promoError,
+  applyingPromo
+}) {
+  const discountAmount = appliedPromo ? Math.floor(cartTotal * (appliedPromo.percentage / 100)) : 0;
+  const finalTotal = Math.max(0, cartTotal - discountAmount);
 
   return (
     <div className="order-summary-content">
@@ -677,7 +914,7 @@ function OrderSummaryContent({ cart, cartTotal }) {
               </span>
             )}
           </div>
-          <span className="order-summary-item-price">₹{(item.basePrice * item.qty).toLocaleString('en-IN')}</span>
+          <span className="order-summary-item-price">₹{((item.unitPrice ?? item.basePrice) * item.qty).toLocaleString('en-IN')}</span>
         </div>
       ))}
 
@@ -688,18 +925,62 @@ function OrderSummaryContent({ cart, cartTotal }) {
           <span>Subtotal</span>
           <span>₹{cartTotal.toLocaleString('en-IN')}</span>
         </div>
+        {appliedPromo && (
+          <div className="order-summary-total-row" style={{ color: '#2e7d32', fontWeight: 6 }}>
+            <span>Promo Discount ({appliedPromo.percentage}%)</span>
+            <span>- ₹{discountAmount.toLocaleString('en-IN')}</span>
+          </div>
+        )}
         <div className="order-summary-total-row order-summary-total-row--muted">
           <span>Shipping</span>
           <span>At checkout</span>
         </div>
         <div className="order-summary-divider" />
         <div className="order-summary-total-row order-summary-total-row--advance">
-          <span>Advance due now (50%)</span>
-          <span>₹{advance.toLocaleString('en-IN')}</span>
+          <span>Payment due now (100%)</span>
+          <span>₹{finalTotal.toLocaleString('en-IN')}</span>
         </div>
       </div>
 
-      <div className="order-summary-crafted-note">
+      <div className="checkout-promo-box" style={{ marginTop: 20 }}>
+        {appliedPromo ? (
+          <div className="checkout-promo-applied" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#e8f5e9', padding: '10px 14px', borderRadius: 8, border: '1px solid #c8e6c9' }}>
+            <div>
+              <span style={{ fontSize: 10, color: '#2e7d32', fontWeight: 6, display: 'block', textTransform: 'uppercase', letterSpacing: 0.5 }}>Promo Applied</span>
+              <strong style={{ fontSize: 13, color: '#1b5e20' }}>{appliedPromo.code}</strong>
+            </div>
+            <button type="button" onClick={handleRemovePromo} style={{ background: 'none', border: 'none', color: '#c62828', fontSize: 11, cursor: 'pointer', fontWeight: 6 }}>
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="text"
+              placeholder="Promo Code"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
+              disabled={applyingPromo}
+              style={{ flexGrow: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, textTransform: 'uppercase' }}
+            />
+            <button
+              type="button"
+              onClick={() => handleApplyPromo()}
+              disabled={applyingPromo || !promoCode.trim()}
+              style={{ background: '#111', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontWeight: 6 }}
+            >
+              {applyingPromo ? '...' : 'Apply'}
+            </button>
+          </div>
+        )}
+        {promoError && (
+          <p className="promo-error-text" style={{ color: '#c62828', fontSize: 11, margin: '6px 0 0 0', fontWeight: 5 }}>
+            ❌ {promoError}
+          </p>
+        )}
+      </div>
+
+      <div className="order-summary-crafted-note" style={{ marginTop: 20 }}>
         <Sparkles size={12} />
         <span>Handcrafted after your order — made especially for you.</span>
       </div>
@@ -732,82 +1013,65 @@ function ConfirmationPanel({ result }) {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="checkout-confirmation-shell"
-    >
+    <div className="checkout-confirmation-shell">
       <motion.div
-        initial={{ scale: 0.5, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.15, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="confirm-check-badge"
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+        className="checkout-confirmation-card"
       >
-        <Check size={28} />
-      </motion.div>
-
-      <p className="eyebrow" style={{ textAlign: 'center' }}>Order Confirmed</p>
-      <h1 className="confirm-heading">Thank you, {customerName}.</h1>
-      <p className="confirm-order-num">Order #{orderNumber}</p>
-
-      {advance && (
-        <div className="confirm-advance-card">
-          <strong>Advance payment pending: ₹{Number(advance).toLocaleString('en-IN')}</strong>
-          <p>Kinzee will reach out on WhatsApp with payment details shortly.</p>
+        <div className="confirmation-badge-wrap">
+          <div className="confirmation-badge">
+            <Check size={28} />
+          </div>
         </div>
-      )}
 
-      <div className="confirm-next-steps">
-        <h3 className="confirm-next-heading">What happens next</h3>
-        <div className="confirm-steps-list">
-          {nextSteps.map((ns, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + i * 0.12, duration: 0.4 }}
-              className="confirm-step-row"
-            >
-              <div className="confirm-step-icon">{ns.icon}</div>
-              <div className="confirm-step-content">
-                <strong>{ns.heading}</strong>
-                <span>{ns.detail}</span>
+        <p className="confirmation-eyebrow">Order Placed Successfully</p>
+        <h1 className="confirmation-heading">Thank you, {customerName}!</h1>
+        <p className="confirmation-subtext">
+          Your order number is <strong className="confirmation-order-num">#{orderNumber}</strong>. We've sent a receipt to your email.
+        </p>
+
+        <div className="confirmation-details-box">
+          <div className="confirmation-detail-row">
+            <span>Order Number</span>
+            <strong>#{orderNumber}</strong>
+          </div>
+          <div className="confirmation-detail-row">
+            <span>Payment Verified</span>
+            <strong style={{ color: '#2e7d32' }}>₹{advance ? advance.toLocaleString('en-IN') : '0'} (Paid)</strong>
+          </div>
+          <div className="confirmation-detail-row">
+            <span>Delivery Address</span>
+            <span>{result.customer?.address || 'Indore'}</span>
+          </div>
+        </div>
+
+        <div className="confirmation-next-steps">
+          <h3>What happens next?</h3>
+          <div className="next-steps-grid">
+            {nextSteps.map((step, idx) => (
+              <div key={idx} className="next-step-card">
+                <span className="next-step-icon">{step.icon}</span>
+                <h4>{step.heading}</h4>
+                <p>{step.detail}</p>
               </div>
-            </motion.div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="confirm-action-row">
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="confirm-btn confirm-btn--wa"
-        >
-          <MessageCircle size={16} />
-          <span>Continue on WhatsApp</span>
-        </a>
+        <div className="confirmation-actions">
+          <a href={waUrl} target="_blank" rel="noopener noreferrer" className="confirmation-wa-btn">
+            <MessageCircle size={16} />
+            Chat with Kinzee on WhatsApp
+          </a>
 
-        <Link href="/shop" className="confirm-btn confirm-btn--shop">
-          <span>Continue Shopping</span>
-          <ArrowRight size={15} />
-        </Link>
+          <Link href="/track" className="confirmation-track-btn">
+            Track Order Progress
+          </Link>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent('open-customer-auth'))}
-          className="confirm-btn confirm-btn--account"
-        >
-          <Sparkles size={14} />
-          <span>My Kinzee <span className="confirm-optional-tag">(Optional)</span></span>
-        </button>
-      </div>
-
-      <p className="confirm-footer-note">
-        A Kinzee account lets you track your order status, view past orders, and manage custom requests — completely optional, forever free.
-      </p>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

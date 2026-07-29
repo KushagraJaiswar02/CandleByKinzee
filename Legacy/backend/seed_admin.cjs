@@ -12,10 +12,10 @@ mongoose.connect('mongodb://127.0.0.1:27017/candlewithkinzee').then(async () => 
   
   await Admin.deleteMany({});
   
-  const hash = bcrypt.hashSync('kinzeeadmin123', 10);
+  const hash = bcrypt.hashSync('yashyash', 10);
   
   await Admin.create({ 
-    email: 'admin@kinzee.com', 
+    email: 'yash@gmail.com', 
     passwordHash: hash,
     role: 'owner',
     failedLoginAttempts: 0,

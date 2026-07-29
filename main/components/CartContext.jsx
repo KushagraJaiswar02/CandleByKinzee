@@ -80,7 +80,7 @@ export function CartProvider({ children }) {
   const clearCart = useCallback(() => setCart([]), []);
 
   const cartCount = cart.reduce((acc, c) => acc + (c.qty || 1), 0);
-  const cartTotal = cart.reduce((acc, c) => acc + (c.basePrice || 0) * (c.qty || 1), 0);
+  const cartTotal = cart.reduce((acc, c) => acc + (c.unitPrice ?? c.basePrice ?? 0) * (c.qty || 1), 0);
 
   return (
     <CartContext.Provider

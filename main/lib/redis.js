@@ -63,4 +63,25 @@ if (REDIS_URL) {
   };
 }
 
+export async function invalidateProductCache() {
+  if (REDIS_URL) {
+    try {
+      const keys = await global.redisInstance.keys('products:*');
+      if (keys.length > 0) {
+        await global.redisInstance.del(...keys);
+      }
+    } catch (err) {
+      console.error('[Redis Invalidate Error]', err);
+    }
+  } else {
+    if (global.mockRedisStore) {
+      for (const key of global.mockRedisStore.keys()) {
+        if (key.startsWith('products:')) {
+          global.mockRedisStore.delete(key);
+        }
+      }
+    }
+  }
+}
+
 export default redisClient;

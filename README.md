@@ -1,299 +1,113 @@
-# 🕯️ Candle by Kinzee
+# 🕯️ Atelier Candle by Kinzee
 
-> A production-ready, full-stack e-commerce platform for a solo made-to-order candle business in India.
+> A luxury, enterprise-grade Next.js App Router e-commerce platform for a bespoke made-to-order candle business in India.
 
-Built as a MERN-stack monorepo with a React + Vite storefront and a Node.js + Express REST API, designed for real-world use with Razorpay payments, Brevo transactional emails, Cloudinary image hosting, and MongoDB Atlas.
+This project has been upgraded from a legacy decoupled MERN monorepo into a unified, highly optimized **Next.js App Router** application located in the `main/` directory. It features a stunning glassmorphic UI, Google Fonts typography (Cinzel & Plus Jakarta Sans), TailAdmin admin workspace, and Redis-backed cancellation request queueing.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-candlewithkinzee/
-├── backend/                  # Node.js + Express REST API
-│   ├── scripts/
-│   │   ├── createAdmin.js    # One-time admin account creation
-│   │   └── seedProducts.js   # Seed placeholder catalog data
-│   └── src/
-│       ├── config/           # DB connection, Cloudinary, etc.
-│       ├── middleware/        # Auth guards, error handlers, rate limiters
-│       ├── models/           # Mongoose schemas
-│       ├── routes/           # Express route handlers
-│       ├── services/         # Business logic (orders, pricing, payments, notifications)
-│       ├── utils/            # Shared helpers
-│       ├── constants.js      # App-wide constants
-│       └── app.js / server.js
-│
-├── frontend/                 # React + Vite customer storefront & admin UI
-│   └── src/
-│       ├── api/              # Axios API client modules
-│       ├── components/       # Shared UI components
-│       ├── pages/            # Route-level page components
-│       ├── styles/           # CSS stylesheets
-│       ├── hooks.js          # Custom React hooks
-│       └── App.jsx / main.jsx
-│
-├── package.json              # Root npm workspaces config
-└── README.md
+CandleByKinzee/
+├── main/                       # Unified Next.js App Router Project
+│   ├── app/                    # Next.js pages, api routes, and layouts
+│   │   ├── api/                # Unified backend endpoints (auth, products, orders, discounts, etc.)
+│   │   ├── admin/              # TailAdmin Admin Workspace (orders, quotes, catalog, coupons, cancellations)
+│   │   ├── checkout/           # Multi-step checkout with live promo codes & address selection
+│   │   ├── track/              # Interactive customer order tracker and quote negotiation board
+│   │   └── globals.css         # Global design tokens, animations, and typography
+│   ├── components/             # Reusable Client & Server components (FlameButton, CartContext, etc.)
+│   ├── lib/                    # Shared business logic, mongoose models, and services
+│   │   ├── models/             # Mongoose schemas (Order, Product, Customer, Discount, CancellationTicket)
+│   │   ├── services/           # Payment, pricing, and notification logic
+│   │   └── mailQueue.js        # Redis-backed job list queue for cancellation notifications
+│   ├── public/                 # Static assets (images, banners)
+│   ├── next.config.mjs         # Next.js configurations
+│   └── package.json            # Next.js dependencies and scripts
+└── Legacy/                     # Kept for historical reference (decoupled backend & frontend)
 ```
 
 ---
 
-## ✨ Features
+## ✨ Features & Business Workflows
 
-### Customer-Facing Storefront
-- **Shop** — Browse the fixed candle catalog with product variants and option surcharges
-- **Product Detail** — Select size, scent, and add-ons; price computed server-side
-- **Shopping Bag** — Cart managed in local state; no account required
-- **Checkout** — Guest-first checkout with Razorpay advance payment integration
-- **Order Tracking** — Look up any order by order number + customer phone
-- **Quote Requests** — Submit custom candle requests with reference image uploads
-- **Our Story** — Brand page
-- **Socials** — Social media links
+### 1. Customer-Facing Storefront
+- **Shop & Customization** — Explore active candle categories (Signature, Luxury, Gift Boxes, Decor). Select custom colors/scents with automatic price calculations.
+- **Smart Checkout** — Dual-mode shipping address selection:
+  - **Choose from Saved Address**: Shows clickable saved address cards from the customer profile. Automatically pre-fills details and hides manual input fields.
+  - **Enter Manually**: Displays text inputs for new addresses.
+- **Live Promo Codes** — Form fields on Steps 2 & 3 and sidebar validating codes live against `/api/promo/validate`.
+- **Bespoke Quote Request** — Customers upload design briefs and images. Discuss terms, materials, and pricing via a real-time negotiation board.
+- **Interactive Timed Timelines** — Orders are tracked via unique IDs with step-by-step progress tracking (Curing, Handcrafting, Packaging, Dispatch).
 
-### Admin Panel
-- Secure login with bcrypt-hashed passwords and httpOnly JWT cookies
-- Login lockout after 5 failed attempts (15-minute cooldown)
-- Manage products, orders, quotes, banners, and promo codes
+### 2. TailAdmin Admin Dashboard (`/admin`)
+- **Left Fixed Sidebar**: Section navigation (Overview, Shop Orders, Custom Quotes, Cancel Requests, Catalog, Coupons) with pending counters.
+- **Top Header Bar**: Real-time customer search, database connectivity indicators, and active ticket alerts.
+- **Metric Analytics**: Summary cards for gross revenue, active dispatches, pending quotes, and cancellation tickets.
+- **Product SKUs & Offers**: Drawer widgets to add/edit products, activate/deactivate listings, register coupon codes, and delete discounts.
 
-### Business Logic
-| Rule | Detail |
-|---|---|
-| Guest-first checkout | No required customer account flow |
-| No inventory tracking | Catalog is fixed; no stock counts |
-| Server-side pricing | Order totals computed from active products + surcharges |
-| Price capture at order | `priceAtOrder` frozen per line item; history never changes |
-| Quote-to-order flow | Admin sets `quotedPrice`; customer accepts → real order created |
-| Order tracking auth | Requires both `orderNumber` AND customer phone |
-| Cancellation gate | Server rejects cancellation once order reaches `in_progress` |
-| Balance payment | Controlled by delivery method and `POST_SUPPORTS_COD` flag |
-
-### Security & Reliability
-- Helmet security headers
-- `express-mongo-sanitize` for NoSQL injection protection
-- XSS sanitization on public banner content
-- Rate limiting on promo validation and anonymous order/quote endpoints
-- Razorpay webhook signature verification (server-side)
-- Zod schema validation on all inputs
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 18, React Router v7, Framer Motion, Lucide React, Axios |
-| Build Tool | Vite 6 |
-| Backend | Node.js, Express 4 |
-| Database | MongoDB Atlas via Mongoose 8 |
-| Auth | JWT + bcryptjs + httpOnly cookies |
-| Payments | Razorpay (Orders API + Payment Links API) |
-| Email | Brevo (transactional) |
-| Images | Cloudinary |
-| Validation | Zod |
-| Testing | Vitest |
-| Logging | Morgan |
+### 3. Redis-Backed Cancellation Ticket System
+- **Safety Gate**: Customers request cancellations from their order tracker.
+- **cancellation Model**: Creates a `CancellationTicket` in MongoDB and pushes email dispatch jobs into a **Redis Queue** (`lib/mailQueue.js`) alerting `yashpouranik124@gmail.com`.
+- **Review Tab**: Admin approves (cancels order and initiates refunds) or declines tickets directly from the dashboard.
 
 ---
 
 ## ⚡ Local Setup
 
-### Prerequisites
-
+### 1. Prerequisites
 - Node.js ≥ 18
-- npm ≥ 9 (for workspaces support)
-- A running MongoDB instance (local or Atlas)
+- MongoDB (Running locally or MongoDB Atlas)
+- Redis Server (Optional; falls back to an in-memory mock if `REDIS_URL` is omitted)
 
-### 1. Install all dependencies
-
+### 2. Install Dependencies
+Navigate to the `main` directory:
 ```bash
+cd main
 npm install
 ```
 
-This installs dependencies for both `backend` and `frontend` workspaces from the root.
-
-### 2. Configure environment variables
-
-```bash
-# Windows (PowerShell)
-copy backend\.env.example backend\.env
-copy frontend\.env.example frontend\.env
-
-# macOS / Linux
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+### 3. Setup Environment Variables
+Create a `main/.env.local` file:
+```env
+MONGODB_URI=mongodb://127.0.0.1:27017/candlewithkinzee
+JWT_SECRET=your_super_secret_jwt_passcode
+ADMIN_COOKIE_NAME=atelier_admin_token
+RAZORPAY_KEY_ID=rzp_test_yourkeyid
+RAZORPAY_KEY_SECRET=yourkeysecret
+POST_SUPPORTS_COD=true
+REDIS_URL=redis://127.0.0.1:6379
 ```
 
-Then edit each `.env` file with your local or test credentials (see [Environment Variables](#-environment-variables) below).
-
-### 3. Create the admin account
-
+### 4. Seed Admin & Catalog Data
+Run the seeding scripts from inside the `main` directory:
 ```bash
-npm run create-admin --workspace backend
+# Seed owner credentials (admin@kinzee.com / kinzeeadmin123)
+node ../C:/Users/DELL/.gemini/antigravity/brain/608696b7-9462-4ba7-a1cb-afc2f4ac848e/scratch/seed_admin.js
 ```
 
-### 4. Seed placeholder catalog data
-
-```bash
-npm run seed --workspace backend
-```
-
-### 5. Start the API server
-
-```bash
-npm run dev:backend
-```
-
-API will be available at `http://localhost:4000`.
-
-### 6. Start the frontend dev server
-
+### 5. Run Development Server
 ```bash
 npm run dev
 ```
-
-Storefront will be available at `http://localhost:5173`.
-
----
-
-## 🔐 Environment Variables
-
-### Backend (`backend/.env`)
-
-| Variable | Description |
-|---|---|
-| `NODE_ENV` | `development` or `production` |
-| `PORT` | Port for the API server (default: `4000`) |
-| `CLIENT_ORIGIN` | Frontend origin for CORS (e.g. `http://localhost:5173`) |
-| `MONGODB_URI` | MongoDB connection string |
-| `JWT_SECRET` | Long random secret for signing JWTs |
-| `ADMIN_COOKIE_NAME` | Name of the admin session cookie |
-| `RAZORPAY_KEY_ID` | Razorpay API key ID |
-| `RAZORPAY_KEY_SECRET` | Razorpay API key secret |
-| `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook signing secret |
-| `POST_SUPPORTS_COD` | `true` / `false` — enables COD for India Post delivery |
-| `BREVO_API_KEY` | Brevo (formerly Sendinblue) API key |
-| `BREVO_SENDER_EMAIL` | Transactional sender email address |
-| `BREVO_SENDER_NAME` | Transactional sender display name |
-| `WHATSAPP_NUMBER` | WhatsApp number for deep links (e.g. `919999999999`) |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
-| `CLOUDINARY_API_KEY` | Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | Cloudinary API secret |
-
-### Frontend (`frontend/.env`)
-
-| Variable | Description |
-|---|---|
-| `VITE_API_BASE_URL` | Backend API base URL (e.g. `http://localhost:4000/api`) |
-| `VITE_RAZORPAY_KEY_ID` | Razorpay public key ID for the checkout SDK |
-| `VITE_WHATSAPP_NUMBER` | WhatsApp number for customer support deep links |
-
-> ⚠️ **Never commit real secrets.** All `.env` files are gitignored by default.
+Open [http://localhost:3000](http://localhost:3000) to view the storefront, or [http://localhost:3000/admin](http://localhost:3000/admin) to manage the Atelier.
 
 ---
 
-## 🗄️ Data Models
-
-| Model | Description |
-|---|---|
-| `Admin` | Admin account with bcrypt-hashed password and login attempt tracking |
-| `Product` | Candle catalog item with variants, options, and pricing |
-| `Order` | Customer order with line items, `priceAtOrder` capture, and status lifecycle |
-| `QuoteRequest` | Custom candle request with reference images and quoted price flow |
-| `Customer` | Optional guest identity stored for repeat order lookup |
-| `Discount` | Promo codes with usage limits and expiry |
-| `Banner` | Storefront announcement banners with XSS-sanitized content |
-
----
-
-## 🚀 Deployment
-
-### Backend → Render
-
-1. Create a **Render Web Service** from this repository.
-2. Set **Root Directory** to `backend`.
-3. **Build command:** `npm install`
-4. **Start command:** `npm start`
-5. Add all variables from `backend/.env.example` in Render's environment settings.
-6. Set `CLIENT_ORIGIN` to your Vercel production URL.
-7. Set `NODE_ENV=production`.
-
-### Frontend → Vercel
-
-1. Create a **Vercel project** from this repository.
-2. Set **Root Directory** to `frontend`.
-3. **Build command:** `npm run build`
-4. **Output directory:** `dist`
-5. Set `VITE_API_BASE_URL` to your Render API URL ending in `/api`.
-6. Set `VITE_RAZORPAY_KEY_ID` to your Razorpay live key.
-
-### MongoDB Atlas
-
-- Use an **M0 (free)** cluster for low-traffic production.
-- Store the Atlas connection string in `MONGODB_URI`.
-- Enable **IP allowlisting** for your Render service outbound IPs.
-- The free tier does not include automated backups — export data periodically or upgrade to enable Atlas backups.
-
-### Cloudinary
-
-- Upload product images and quote reference photos to Cloudinary.
-- Store only Cloudinary delivery URLs in MongoDB (never raw binaries).
-
-### Razorpay
-
-- Use **Orders API** for advance payments at checkout.
-- Use **Payment Links API** for balance collection on delivery.
-- Test with `rzp_test_*` credentials first; switch to live keys only after webhook and signature verification passes end-to-end.
-
-### Brevo
-
-- Used for transactional emails: order confirmations, quote status updates.
-- WhatsApp customer support uses a `wa.me` deep link — no custom chat server is needed.
-
----
-
-## 🧪 Testing & Verification
-
-### Run automated tests
-
-```bash
-npm test
-```
-
-Runs the Vitest suite in `backend/src/tests/`.
-
-### Build the frontend
-
+## 🧪 Production Compilation
+Verify there are no syntax or type compilation errors before deploying:
 ```bash
 npm run build
 ```
-
-### Pre-production checklist
-
-- [ ] Full order placement on a real mobile device on a slow connection
-- [ ] Razorpay test payment with signature and webhook verification
-- [ ] India Post vs. personal delivery — verify balance-payment behaviour
-- [ ] Admin login lockout triggers after 5 failed attempts
-- [ ] Order tracking fails with correct order number but wrong phone number
 
 ---
 
 ## 📜 Available Scripts
 
-Run all scripts from the **project root** unless noted.
-
 | Command | Description |
 |---|---|
-| `npm install` | Install all workspace dependencies |
-| `npm run dev` | Start the frontend dev server |
-| `npm run dev:backend` | Start the backend dev server (with nodemon) |
-| `npm run build` | Build the frontend for production |
-| `npm test` | Run backend Vitest test suite |
-| `npm run seed --workspace backend` | Seed placeholder product catalog |
-| `npm run create-admin --workspace backend` | Create the admin account |
-
----
-
-## 📄 License
-
-This project is private and proprietary. All rights reserved.
+| `npm run dev` | Starts Next.js development server with Hot Module Replacement |
+| `npm run build` | Compiles Next.js production build |
+| `npm run start` | Serves compiled production build |
+| `npm run lint` | Runs ESLint rules check |

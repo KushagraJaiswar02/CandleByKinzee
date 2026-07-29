@@ -8,35 +8,28 @@ import {
 } from '../services/notificationService.js';
 
 export function registerEmailSubscriber() {
-  eventBus.subscribe(ORDER_EVENTS.ORDER_CREATED, async ({ order }) => {
+  // Only send order confirmation email AFTER payment is verified
+  eventBus.subscribe(ORDER_EVENTS.PAYMENT_VERIFIED, async ({ order }) => {
     try {
       await sendOrderEmail(order);
     } catch (err) {
-      console.error('[EmailSubscriber] ORDER_CREATED failed:', err);
+      console.error('[EmailSubscriber] PAYMENT_VERIFIED failed:', err);
     }
   });
 
-  eventBus.subscribe(ORDER_EVENTS.PAYMENT_RECEIVED, async ({ order }) => {
-    try {
-      await sendOrderPaymentReceivedEmail(order);
-    } catch (err) {
-      console.error('[EmailSubscriber] PAYMENT_RECEIVED failed:', err);
-    }
-  });
-
-  eventBus.subscribe(ORDER_EVENTS.STATUS_CHANGED, async ({ order, previousStatus }) => {
+  eventBus.subscribe(ORDER_EVENTS.ORDER_STATUS_CHANGED, async ({ order, previousStatus }) => {
     try {
       await sendOrderStatusChangedEmail(order, previousStatus);
     } catch (err) {
-      console.error('[EmailSubscriber] STATUS_CHANGED failed:', err);
+      console.error('[EmailSubscriber] ORDER_STATUS_CHANGED failed:', err);
     }
   });
 
-  eventBus.subscribe(ORDER_EVENTS.CANCELLED, async ({ order }) => {
+  eventBus.subscribe(ORDER_EVENTS.ORDER_CANCELLED, async ({ order }) => {
     try {
       await sendOrderCancelledEmail(order);
     } catch (err) {
-      console.error('[EmailSubscriber] CANCELLED failed:', err);
+      console.error('[EmailSubscriber] ORDER_CANCELLED failed:', err);
     }
   });
 }

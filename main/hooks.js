@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api.js';
-import { fallbackProducts } from '@/lib/data.js';
 
 export function useProducts(category) {
-  const [products, setProducts] = useState(fallbackProducts);
+  const [products, setProducts] = useState([]);
   useEffect(() => {
     api.get('/products', { params: category ? { category } : {} })
-      .then((res) => setProducts(res.data.products?.length ? res.data.products : fallbackProducts))
-      .catch(() => setProducts(category ? fallbackProducts.filter((p) => p.category === category) : fallbackProducts));
+      .then((res) => setProducts(res.data.products || []))
+      .catch(() => setProducts([]));
   }, [category]);
   return products;
 }

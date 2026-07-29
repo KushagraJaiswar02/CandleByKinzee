@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Heart, Share2, Award, Clock, Sparkles, ChevronDown, MessageCircle, ArrowRight, ShoppingBag, Zap } from 'lucide-react';
 import { Layout } from '@/components/Layout.jsx';
 import { FlameButton } from '@/components/FlameButton.jsx';
-import { fallbackProducts } from '@/lib/data.js';
 import { useProducts, useIsMobile } from '@/hooks.js';
 import { StudioContactCard } from '@/components/StudioContactCard.jsx';
 import { useCart } from '@/components/CartContext.jsx';
@@ -20,7 +19,7 @@ export default function ProductDetail() {
   const router = useRouter();
 
   const product = useMemo(() => {
-    const raw = products.find((item) => item._id === id) || fallbackProducts.find((item) => item._id === id) || products[0];
+    const raw = products.find((item) => item._id === id);
     if (!raw) return null;
 
     return {
@@ -57,6 +56,11 @@ export default function ProductDetail() {
   const [bagToast, setBagToast] = useState(false);
 
   const { addToCart } = useCart();
+  const selectedSurcharge = Object.entries(options).reduce((total, [label, choice]) => {
+    const option = product.customOptions?.find((item) => item.label === label);
+    return total + Number(option?.surcharges?.[choice] || 0);
+  }, 0);
+  const unitPrice = product.basePrice + selectedSurcharge;
 
   useEffect(() => {
     if (product && product.customOptions) {
@@ -79,13 +83,27 @@ export default function ProductDetail() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isMobile]);
 
-  if (!product) return null;
+  if (!product) {
+    return (
+      <Layout>
+        <section className="bag-empty-state">
+          <div className="bag-empty-copy">
+            <p className="eyebrow">Catalogue</p>
+            <h1 className="bag-empty-heading">This candle is no longer available.</h1>
+            <p className="bag-empty-subtext">Explore the current collection to find a piece made for your occasion.</p>
+          </div>
+          <Link href="/shop"><FlameButton>Explore the collection</FlameButton></Link>
+        </section>
+      </Layout>
+    );
+  }
 
   function addToBag() {
     addToCart({
       productId: product._id,
       name: product.name,
       basePrice: product.basePrice,
+      unitPrice,
       image: product.gallery[0],
       qty,
       selectedOptions: options,
@@ -99,6 +117,7 @@ export default function ProductDetail() {
       productId: product._id,
       name: product.name,
       basePrice: product.basePrice,
+      unitPrice,
       image: product.gallery[0],
       qty,
       selectedOptions: options,
@@ -477,7 +496,7 @@ export default function ProductDetail() {
               <img src={product.gallery[0]} alt="" />
               <div className="sticky-checkout-product-meta">
                 <h4>{product.name}</h4>
-                <span>₹{product.basePrice * qty}</span>
+                <span>₹{unitPrice * qty}</span>
               </div>
             </div>
             <button 

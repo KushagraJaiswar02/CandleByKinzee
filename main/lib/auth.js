@@ -1,17 +1,21 @@
 import jwt from 'jsonwebtoken';
 import { env } from './config.js';
 
-const JWT_SECRET = env.jwtSecret || 'dev-only-change-me';
+function getJwtSecret() {
+  if (env.jwtSecret) return env.jwtSecret;
+  if (env.isProduction) throw new Error('JWT_SECRET must be configured in production');
+  return 'local-development-only-secret';
+}
 
 // ─── Token Creation ──────────────────────────────────────────────────────────
 export function signToken(payload, expiresIn = '8h') {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn });
 }
 
 // ─── Token Verification ──────────────────────────────────────────────────────
 export function verifyToken(token) {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, getJwtSecret());
   } catch {
     return null;
   }

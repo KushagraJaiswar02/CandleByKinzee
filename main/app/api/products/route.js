@@ -1,9 +1,11 @@
+import { handleApiError } from '@/lib/errorHandler';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { connectDB } from '@/lib/mongodb.js';
 import { Product } from '@/lib/models/Product.js';
 import { CATEGORIES } from '@/lib/constants.js';
 import { getAdminFromRequest } from '@/lib/auth.js';
+import redisClient, { invalidateProductCache } from '@/lib/redis.js';
 
 const productSchema = z.object({
   name: z.string().min(2),
@@ -24,10 +26,30 @@ export async function GET(request) {
     const url = new URL(request.url);
     const category = url.searchParams.get('category');
 
+    const cacheKey = category ? `products:category:${category}` : 'products:all';
+    
+    // Check Cache first
+    try {
+      const cached = await redisClient.get(cacheKey);
+      if (cached) {
+        return NextResponse.json({ products: JSON.parse(cached), fromCache: true });
+      }
+    } catch (cacheErr) {
+      console.error('[Redis Product GET Cache Error]', cacheErr);
+    }
+
     const query = { isActive: true };
     if (category) query.category = category;
 
     const products = await Product.find(query).sort({ category: 1, name: 1 });
+
+    // Store in Cache (TTL 2 Hours = 7200 seconds)
+    try {
+      await redisClient.set(cacheKey, JSON.stringify(products), 'EX', 7200);
+    } catch (cacheErr) {
+      console.error('[Redis Product SET Cache Error]', cacheErr);
+    }
+
     return NextResponse.json({ products });
 
   } catch (err) {
@@ -48,13 +70,12 @@ export async function POST(request) {
     const parsed = productSchema.parse(body);
     const product = await Product.create({ ...parsed, lastModifiedBy: admin.sub });
     
+    // Invalidate product catalog cache
+    await invalidateProductCache();
+
     return NextResponse.json({ product }, { status: 201 });
 
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: err.errors[0]?.message || 'Validation failed' }, { status: 422 });
-    }
-    console.error(err);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return handleApiError(err);
   }
 }

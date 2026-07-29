@@ -11,7 +11,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const customer = await Customer.findById(customerSession.sub);
     if (!customer) {
