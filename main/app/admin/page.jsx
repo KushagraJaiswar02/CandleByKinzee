@@ -152,7 +152,7 @@ export default function Admin() {
 
   async function fetchProducts() {
     try {
-      const res = await api.get('/products');
+      const res = await api.get('/products?all=true');
       setProducts(res.data.products);
     } catch (err) {
       console.error(err);

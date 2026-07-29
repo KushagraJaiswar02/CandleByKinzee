@@ -25,8 +25,11 @@ export async function GET(request) {
     await connectDB();
     const url = new URL(request.url);
     const category = url.searchParams.get('category');
+    const includeAll = url.searchParams.get('all') === 'true' || url.searchParams.get('includeInactive') === 'true';
 
-    const cacheKey = category ? `products:category:${category}` : 'products:all';
+    const cacheKey = includeAll 
+      ? 'products:admin:all' 
+      : (category ? `products:category:${category}` : 'products:all');
     
     // Check Cache first
     try {
@@ -38,7 +41,10 @@ export async function GET(request) {
       console.error('[Redis Product GET Cache Error]', cacheErr);
     }
 
-    const query = { isActive: true };
+    const query = {};
+    if (!includeAll) {
+      query.isActive = true;
+    }
     if (category) query.category = category;
 
     const products = await Product.find(query).sort({ category: 1, name: 1 });
