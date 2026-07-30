@@ -428,7 +428,7 @@ function ContactStep({ contact, setContact, customer, onNext }) {
             value={contact.email}
             onChange={(e) => setContact({ ...contact, email: e.target.value.toLowerCase() })}
           />
-          <small>We'll send your order confirmation and dispatch details here</small>
+          <small>We&apos;ll send your order confirmation and dispatch details here</small>
         </label>
       </div>
 
@@ -1036,7 +1036,7 @@ function ConfirmationPanel({ result }) {
         <p className="confirmation-eyebrow">Order Placed Successfully</p>
         <h1 className="confirmation-heading">Thank you, {customerName}!</h1>
         <p className="confirmation-subtext">
-          Your order number is <strong className="confirmation-order-num">#{orderNumber}</strong>. We've sent a receipt to your email.
+          Your order number is <strong className="confirmation-order-num">#{orderNumber}</strong>. We&apos;ve sent a receipt to your email.
         </p>
 
         <div className="confirmation-details-box">

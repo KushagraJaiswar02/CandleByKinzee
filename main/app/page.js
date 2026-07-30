@@ -151,15 +151,13 @@ const GIFT_BOXES = [
 ];
 
 export default function Home() {
-  const [heroReady, setHeroReady] = useState(false);
-  const isMobile = useIsMobile();
-
-  // Handle loading completion inside useEffect to avoid SSR sessionStorage issue
-  React.useEffect(() => {
+  const [heroReady, setHeroReady] = useState(() => {
     if (typeof window !== 'undefined') {
-      setHeroReady(!!sessionStorage.getItem('kinzee-loaded'));
+      return !!sessionStorage.getItem('kinzee-loaded');
     }
-  }, []);
+    return false;
+  });
+  const isMobile = useIsMobile();
 
   const handleLoadComplete = useCallback(() => setHeroReady(true), []);
 

@@ -161,7 +161,6 @@ export default function Admin() {
 
   useEffect(() => {
     if (!admin) return;
-    setInitialLoading(true);
     Promise.all([
       fetchOrders(),
       fetchQuotes(),
@@ -334,6 +333,27 @@ export default function Admin() {
       },
       product.isActive ? 'warning' : 'default'
     );
+  }
+
+  async function handleUpdateQuote(e) {
+    e.preventDefault();
+    if (!selectedQuote) return;
+    setIsActionLoading(true);
+    try {
+      await api.patch(`/quotes/admin/${selectedQuote._id}`, {
+        status: quoteStatusInput,
+        quotedPrice: quotePriceInput ? Number(quotePriceInput) : undefined,
+        commentText: quoteCommentInput
+      });
+      showToast('Bespoke quote offer updated successfully');
+      setSelectedQuote(null);
+      fetchQuotes();
+    } catch (err) {
+      console.error(err);
+      showToast(err.response?.data?.message || 'Failed to update quote request', 'error');
+    } finally {
+      setIsActionLoading(false);
+    }
   }
 
   async function handleAddDiscount(e) {

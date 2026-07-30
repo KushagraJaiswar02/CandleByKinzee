@@ -121,7 +121,7 @@ ${visionText}
             <p className="eyebrow">The Kinzee Studio</p>
             <h1>Start Your Custom Creation</h1>
             <p className="quote-split-intro">
-              Let's craft something uniquely yours. Whether you are planning bespoke wedding favours, 
+              Let&apos;s craft something uniquely yours. Whether you are planning bespoke wedding favours, 
               arranging corporate gifts, or designing custom celebration candles, we collaborate with you 
               to formulate custom scents, shapes, and personalized details.
             </p>
@@ -135,7 +135,7 @@ ${visionText}
             </div>
 
             <div className="quote-split-reassurance">
-              <p>&ldquo;Every custom order is discussed personally before production. Don\'t worry if you don\'t know all the details yet—our studio will help refine your vision.&rdquo;</p>
+              <p>&ldquo;Every custom order is discussed personally before production. Don&apos;t worry if you don&apos;t know all the details yet—our studio will help refine your vision.&rdquo;</p>
             </div>
           </div>
 

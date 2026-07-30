@@ -80,7 +80,7 @@ export default function ProductDetail() {
   const unitPrice = product ? (product.basePrice + selectedSurcharge) : 0;
 
   useEffect(() => {
-    if (product && product.customOptions) {
+    if (product && product.customOptions && Object.keys(options).length === 0) {
       const initial = {};
       product.customOptions.forEach((opt) => {
         if (opt.choices && opt.choices.length > 0) {
@@ -89,7 +89,7 @@ export default function ProductDetail() {
       });
       setOptions(initial);
     }
-  }, [product]);
+  }, [product, options]);
 
   useEffect(() => {
     if (!isMobile) return;
