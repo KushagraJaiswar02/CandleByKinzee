@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, ShieldCheck, User, MapPin, Package, Heart, Receipt, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { X, Mail, ShieldCheck, User, MapPin, Package, Heart, Receipt, Plus, Trash2, ArrowRight, ShoppingBag, MessageSquare } from 'lucide-react';
 import { api } from '@/lib/api.js';
 import { FlameButton } from './FlameButton.jsx';
 import { useCart } from './CartContext.jsx';
@@ -472,9 +472,77 @@ export function CustomerAuthSheet({ isOpen, onClose }) {
                                   ))}
                                 </div>
                               )}
-                              {q.quotedPrice && (
-                                <div className="quote-card-price-offer">
-                                  <span>Quoted Price: <strong>₹{q.quotedPrice}</strong></span>
+                              {q.quotedPrice ? (
+                                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', marginTop: '12px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                    <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748b', fontWeight: 700 }}>
+                                      Studio Offer Received
+                                    </span>
+                                    <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                                      ₹{q.quotedPrice.toLocaleString('en-IN')}
+                                    </span>
+                                  </div>
+
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        addToCart({
+                                          productId: `custom-quote-${q._id}`,
+                                          name: `Custom Order: ${q.description.slice(0, 25)}...`,
+                                          unitPrice: q.quotedPrice,
+                                          basePrice: q.quotedPrice,
+                                          image: q.referenceImages?.[0] || 'https://images.unsplash.com/photo-1602874801007-bd458bb1b8b6?auto=format&fit=crop&w=600&q=80',
+                                          qty: 1,
+                                          selectedOptions: { Brief: q.description.slice(0, 30) }
+                                        });
+                                        onClose();
+                                        window.location.href = '/checkout';
+                                      }}
+                                      style={{
+                                        background: '#0f172a',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        padding: '8px 10px',
+                                        borderRadius: '6px',
+                                        fontSize: '12px',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <ShoppingBag size={13} /> Accept & Checkout
+                                    </button>
+                                    
+                                    <a
+                                      href={`https://wa.me/917000701579?text=${encodeURIComponent(`Hi Kinzee Studio! I am reviewing my quote request for ₹${q.quotedPrice} (Brief: "${q.description.slice(0, 40)}..."). I would like to accept / discuss payment and delivery!`)}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      style={{
+                                        background: '#ecfdf5',
+                                        color: '#047857',
+                                        border: '1px solid #a7f3d0',
+                                        padding: '8px 10px',
+                                        borderRadius: '6px',
+                                        fontSize: '12px',
+                                        fontWeight: 600,
+                                        textDecoration: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '4px'
+                                      }}
+                                    >
+                                      <MessageSquare size={13} /> Discuss on WhatsApp ↗
+                                    </a>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div style={{ background: '#fffbebe6', border: '1px solid #fef3c7', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', color: '#92400e', marginTop: '10px' }}>
+                                  ⏳ Studio team is reviewing your brief. We will send price quote here &amp; on WhatsApp shortly.
                                 </div>
                               )}
                             </div>
