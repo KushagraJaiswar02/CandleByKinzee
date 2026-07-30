@@ -40,7 +40,9 @@ import {
   MessageSquare,
   Send,
   Truck,
-  CheckCircle2
+  CheckCircle2,
+  Tag,
+  Mail
 } from 'lucide-react';
 import { api } from '@/lib/api.js';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -532,6 +534,14 @@ export default function Admin() {
           </div>
 
           <button 
+            onClick={() => { setActiveTab('discounts'); setFormError(''); setShowDiscountForm(true); }}
+            className="top-quick-action-btn"
+            style={{ background: '#0f172a' }}
+          >
+            <Tag size={14} /> Add Coupon
+          </button>
+
+          <button 
             onClick={() => { setActiveTab('catalog'); setFormError(''); setEditProductId(null); setShowProductForm(true); }}
             className="top-quick-action-btn"
           >
@@ -596,7 +606,8 @@ export default function Admin() {
                     className={`sidebar-item-btn ${activeTab === 'discounts' ? 'active' : ''}`}
                     onClick={() => { setActiveTab('discounts'); setIsMobileSidebarOpen(false); }}
                   >
-                    <Percent size={16} /> Coupons & Offers
+                    <Tag size={16} /> Coupons & Discounts
+                    <span className="sidebar-badge">{discounts.length}</span>
                   </button>
                 </li>
               </ul>
@@ -752,8 +763,17 @@ export default function Admin() {
                   )}
 
                   {activeTab === 'discounts' && (
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
-                      Active Coupon Codes ({discounts.length})
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                        Active Coupon Codes ({discounts.length})
+                      </div>
+                      <button
+                        onClick={() => { setFormError(''); setShowDiscountForm(true); }}
+                        className="top-quick-action-btn"
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
+                      >
+                        <Plus size={14} /> Create New Coupon
+                      </button>
                     </div>
                   )}
 
