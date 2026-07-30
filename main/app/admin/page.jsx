@@ -1533,6 +1533,7 @@ export default function Admin() {
         title={confirmDialog.title}
         message={confirmDialog.message}
         onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirm}
         onClose={closeConfirm}
         isConfirming={isConfirming}
         variant={confirmDialog.variant}
